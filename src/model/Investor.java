@@ -3,7 +3,7 @@ package src.model;
 import java.time.LocalDateTime;
 
 public class Investor {
-    private Long investorId;
+    private String investorId;
     private String username;
     private String password;
     private String name;
@@ -14,7 +14,10 @@ public class Investor {
     private LocalDateTime lastUpdateDate;
     private Address address;
 
-    public Investor(Long investorId, String username, String password, String name, String surname, String email, String phoneNumber, LocalDateTime creationDate, LocalDateTime lastUpdateDate, Address address) {
+    public Investor() {
+    }
+
+    public Investor(String investorId, String username, String password, String name, String surname, String email, String phoneNumber, LocalDateTime creationDate, LocalDateTime lastUpdateDate, Address address) {
         this.investorId = investorId;
         this.username = username;
         this.password = password;
@@ -27,11 +30,11 @@ public class Investor {
         this.address = address;
     }
 
-    public Long getInvestorId() {
+    public String getInvestorId() {
         return investorId;
     }
 
-    public void setInvestorId(Long investorId) {
+    public void setInvestorId(String investorId) {
         this.investorId = investorId;
     }
 

@@ -1,14 +1,17 @@
 package src.model;
 
 public class Address {
-    private Long addressId;
+    private String addressId;
     private String street;
     private String postalCode;
     private String city;
 
     private Country country;
 
-    public Address(Long addressId, String street, String postalCode, String city, Country country) {
+    public Address() {
+    }
+    
+    public Address(String addressId, String street, String postalCode, String city, Country country) {
         this.addressId = addressId;
         this.street = street;
         this.postalCode = postalCode;
@@ -16,11 +19,11 @@ public class Address {
         this.country = country;
     }
 
-    public Long getAddressId() {
+    public String getAddressId() {
         return addressId;
     }
 
-    public void setAddressId(Long addressId) {
+    public void setAddressId(String addressId) {
         this.addressId = addressId;
     }
 

@@ -1,21 +1,21 @@
 package src.model;
 
 public class Country {
-    private Long countryId;
+    private String countryId;
     private String countryCode;
     private String countryName;
 
-    public Country(Long countryId, String countryCode, String countryName) {
+    public Country(String countryId, String countryCode, String countryName) {
         this.countryId = countryId;
         this.countryCode = countryCode;
         this.countryName = countryName;
     }
 
-    public Long getCountryId() {
+    public String getCountryId() {
         return countryId;
     }
 
-    public void setCountryId(Long countryId) {
+    public void setCountryId(String countryId) {
         this.countryId = countryId;
     }
 
