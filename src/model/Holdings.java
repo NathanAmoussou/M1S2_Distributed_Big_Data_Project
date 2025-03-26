@@ -4,8 +4,8 @@ import java.math.BigDecimal;
 
 public class Holdings {
     private String holdingsId;
-    private Wallet wallet;
-    private Stock stock;
+    private String walletId;
+    private String stockId;
 
     private int quantity;
     private BigDecimal averagePurchasePrice;
@@ -13,10 +13,10 @@ public class Holdings {
     public Holdings() {
     }
 
-    public Holdings(String holdingsId, Wallet wallet, Stock stock, int quantity, BigDecimal averagePurchasePrice) {
+    public Holdings(String holdingsId, String walletId, String stockId, int quantity, BigDecimal averagePurchasePrice) {
         this.holdingsId = holdingsId;
-        this.wallet = wallet;
-        this.stock = stock;
+        this.walletId = walletId;
+        this.stockId = stockId;
         this.quantity = quantity;
         this.averagePurchasePrice = averagePurchasePrice;
     }
@@ -29,20 +29,20 @@ public class Holdings {
         this.holdingsId = holdingsId;
     }
 
-    public Wallet getWallet() {
-        return wallet;
+    public String getWalletId() {
+        return walletId;
     }
 
-    public void setWallet(Wallet wallet) {
-        this.wallet = wallet;
+    public void setWalletId(String walletId) {
+        this.walletId = walletId;
     }
 
-    public Stock getStock() {
-        return stock;
+    public String getStockId() {
+        return stockId;
     }
 
-    public void setStock(Stock stock) {
-        this.stock = stock;
+    public void setStockId(String stockId) {
+        this.stockId = stockId;
     }
 
     public int getQuantity() {
@@ -65,8 +65,8 @@ public class Holdings {
     public String toString() {
         return "Holdings{" +
                 "holdingsId='" + holdingsId + '\'' +
-                ", wallet=" + wallet +
-                ", stock=" + stock +
+                ", walletId='" + walletId + '\'' +
+                ", stockId='" + stockId + '\'' +
                 ", quantity=" + quantity +
                 ", averagePurchasePrice=" + averagePurchasePrice +
                 '}';

@@ -10,20 +10,18 @@ public class Stock {
     private String market;
     private String sector;
     private BigDecimal lastPrice;
-    private double price;
     private LocalDateTime lastUpdated;
 
     public Stock() {
     }
 
-    public Stock(String stockId, String stockName, String stockTicker, String market, String sector, BigDecimal lastPrice, double price, LocalDateTime lastUpdated) {
+    public Stock(String stockId, String stockName, String stockTicker, String market, String sector, BigDecimal lastPrice, LocalDateTime lastUpdated) {
         this.stockId = stockId;
         this.stockName = stockName;
         this.stockTicker = stockTicker;
         this.market = market;
         this.sector = sector;
         this.lastPrice = lastPrice;
-        this.price = price;
         this.lastUpdated = lastUpdated;
     }
 
@@ -75,14 +73,6 @@ public class Stock {
         this.lastPrice = lastPrice;
     }
 
-    public double getPrice() {
-        return price;
-    }
-
-    public void setPrice(double price) {
-        this.price = price;
-    }
-
     public LocalDateTime getLastUpdated() {
         return lastUpdated;
     }
@@ -100,7 +90,6 @@ public class Stock {
                 ", market='" + market + '\'' +
                 ", sector='" + sector + '\'' +
                 ", lastPrice=" + lastPrice +
-                ", price=" + price +
                 ", lastUpdated=" + lastUpdated +
                 '}';
     }

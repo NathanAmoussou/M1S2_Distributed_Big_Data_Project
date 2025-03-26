@@ -6,7 +6,7 @@ public class TransactionTypes {
 
     public TransactionTypes() {
     }
-    
+
     public TransactionTypes(String transactionTypesKey, String transactionTypesValue) {
         this.transactionTypesKey = transactionTypesKey;
         this.transactionTypesValue = transactionTypesValue;

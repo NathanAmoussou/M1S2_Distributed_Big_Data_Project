@@ -10,24 +10,24 @@ public class Transaction {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    private Stock stock;
-    private Wallet wallet;
-    private TransactionTypes transactionTypes;
-    private TransactionStatus transactionStatus;
+    private String stockId;
+    private String walletId;
+    private String transactionTypesId;
+    private String transactionStatusId;
 
     public Transaction() {
     }
 
-    public Transaction(String transactionId, int quantity, BigDecimal priceAtTransaction, LocalDateTime createdAt, LocalDateTime updatedAt, Stock stock, Wallet wallet, TransactionTypes transactionTypes, TransactionStatus transactionStatus) {
+    public Transaction(String transactionId, int quantity, BigDecimal priceAtTransaction, LocalDateTime createdAt, LocalDateTime updatedAt, String stockId, String walletId, String transactionTypesId, String transactionStatusId) {
         this.transactionId = transactionId;
         this.quantity = quantity;
         this.priceAtTransaction = priceAtTransaction;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
-        this.stock = stock;
-        this.wallet = wallet;
-        this.transactionTypes = transactionTypes;
-        this.transactionStatus = transactionStatus;
+        this.stockId = stockId;
+        this.walletId = walletId;
+        this.transactionTypesId = transactionTypesId;
+        this.transactionStatusId = transactionStatusId;
     }
 
     public String getTransactionId() {
@@ -70,36 +70,36 @@ public class Transaction {
         this.updatedAt = updatedAt;
     }
 
-    public Stock getStock() {
-        return stock;
+    public String getStockId() {
+        return stockId;
     }
 
-    public void setStock(Stock stock) {
-        this.stock = stock;
+    public void setStockId(String stockId) {
+        this.stockId = stockId;
     }
 
-    public Wallet getWallet() {
-        return wallet;
+    public String getWalletId() {
+        return walletId;
     }
 
-    public void setWallet(Wallet wallet) {
-        this.wallet = wallet;
+    public void setWalletId(String walletId) {
+        this.walletId = walletId;
     }
 
-    public TransactionTypes getTransactionTypes() {
-        return transactionTypes;
+    public String getTransactionTypesId() {
+        return transactionTypesId;
     }
 
-    public void setTransactionTypes(TransactionTypes transactionTypes) {
-        this.transactionTypes = transactionTypes;
+    public void setTransactionTypesId(String transactionTypesId) {
+        this.transactionTypesId = transactionTypesId;
     }
 
-    public TransactionStatus getTransactionStatus() {
-        return transactionStatus;
+    public String getTransactionStatusId() {
+        return transactionStatusId;
     }
 
-    public void setTransactionStatus(TransactionStatus transactionStatus) {
-        this.transactionStatus = transactionStatus;
+    public void setTransactionStatusId(String transactionStatusId) {
+        this.transactionStatusId = transactionStatusId;
     }
 
     @Override
@@ -110,10 +110,10 @@ public class Transaction {
                 ", priceAtTransaction=" + priceAtTransaction +
                 ", createdAt=" + createdAt +
                 ", updatedAt=" + updatedAt +
-                ", stock=" + stock +
-                ", wallet=" + wallet +
-                ", transactionTypes=" + transactionTypes +
-                ", transactionStatus=" + transactionStatus +
+                ", stockId='" + stockId + '\'' +
+                ", walletId='" + walletId + '\'' +
+                ", transactionTypesId='" + transactionTypesId + '\'' +
+                ", transactionStatusId='" + transactionStatusId + '\'' +
                 '}';
     }
 }

@@ -5,7 +5,7 @@ import java.time.LocalDateTime;
 
 public class StockPriceHistory {
     private String stockPriceHistoryId;
-    private Stock stock;
+    private String stockId;
     private LocalDateTime dateTime;
     private BigDecimal openPrice;
     private BigDecimal closePrice;
@@ -15,9 +15,9 @@ public class StockPriceHistory {
     public StockPriceHistory() {
     }
 
-    public StockPriceHistory(String stockPriceHistoryId, Stock stock, LocalDateTime dateTime, BigDecimal openPrice, BigDecimal closePrice, BigDecimal highPrice, BigDecimal lowPrice) {
+    public StockPriceHistory(String stockPriceHistoryId, String stockId, LocalDateTime dateTime, BigDecimal openPrice, BigDecimal closePrice, BigDecimal highPrice, BigDecimal lowPrice) {
         this.stockPriceHistoryId = stockPriceHistoryId;
-        this.stock = stock;
+        this.stockId = stockId;
         this.dateTime = dateTime;
         this.openPrice = openPrice;
         this.closePrice = closePrice;
@@ -33,12 +33,12 @@ public class StockPriceHistory {
         this.stockPriceHistoryId = stockPriceHistoryId;
     }
 
-    public Stock getStock() {
-        return stock;
+    public String getStockId() {
+        return stockId;
     }
 
-    public void setStock(Stock stock) {
-        this.stock = stock;
+    public void setStockId(String stockId) {
+        this.stockId = stockId;
     }
 
     public LocalDateTime getDateTime() {
@@ -85,7 +85,7 @@ public class StockPriceHistory {
     public String toString() {
         return "StockPriceHistory{" +
                 "stockPriceHistoryId='" + stockPriceHistoryId + '\'' +
-                ", stock=" + stock +
+                ", stockId='" + stockId + '\'' +
                 ", dateTime=" + dateTime +
                 ", openPrice=" + openPrice +
                 ", closePrice=" + closePrice +

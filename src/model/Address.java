@@ -6,17 +6,17 @@ public class Address {
     private String postalCode;
     private String city;
 
-    private Country country;
+    private String countryId;
 
     public Address() {
     }
-    
-    public Address(String addressId, String street, String postalCode, String city, Country country) {
+
+    public Address(String addressId, String street, String postalCode, String city, String countryId) {
         this.addressId = addressId;
         this.street = street;
         this.postalCode = postalCode;
         this.city = city;
-        this.country = country;
+        this.countryId = countryId;
     }
 
     public String getAddressId() {
@@ -51,22 +51,22 @@ public class Address {
         this.city = city;
     }
 
-    public Country getCountry() {
-        return country;
+    public String getCountryId() {
+        return countryId;
     }
 
-    public void setCountry(Country country) {
-        this.country = country;
+    public void setCountryId(String countryId) {
+        this.countryId = countryId;
     }
 
     @Override
     public String toString() {
         return "Address{" +
-                "addressId=" + addressId +
+                "addressId='" + addressId + '\'' +
                 ", street='" + street + '\'' +
                 ", postalCode='" + postalCode + '\'' +
                 ", city='" + city + '\'' +
-                ", country=" + country +
+                ", countryId='" + countryId + '\'' +
                 '}';
     }
 }

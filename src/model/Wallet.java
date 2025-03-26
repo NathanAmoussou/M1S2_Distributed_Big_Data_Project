@@ -8,19 +8,19 @@ public class Wallet {
     private String currencyCode;
     private BigDecimal balance; //wesh c est int infini du jamais vu
 
-    private Investor investor;
+    private String investorId;
 
-    private WalletType walletType;
+    private String walletTypeId;
 
     public Wallet() {
     }
 
-    public Wallet(String walletId, String currencyCode, BigDecimal balance, Investor investor, WalletType walletType) {
+    public Wallet(String walletId, String currencyCode, BigDecimal balance, String investorId, String walletTypeId) {
         this.walletId = walletId;
         this.currencyCode = currencyCode;
         this.balance = balance;
-        this.investor = investor;
-        this.walletType = walletType;
+        this.investorId = investorId;
+        this.walletTypeId = walletTypeId;
     }
 
     public String getWalletId() {
@@ -47,20 +47,20 @@ public class Wallet {
         this.balance = balance;
     }
 
-    public Investor getInvestor() {
-        return investor;
+    public String getInvestorId() {
+        return investorId;
     }
 
-    public void setInvestor(Investor investor) {
-        this.investor = investor;
+    public void setInvestorId(String investorId) {
+        this.investorId = investorId;
     }
 
-    public WalletType getWalletType() {
-        return walletType;
+    public String getWalletTypeId() {
+        return walletTypeId;
     }
 
-    public void setWalletType(WalletType walletType) {
-        this.walletType = walletType;
+    public void setWalletTypeId(String walletTypeId) {
+        this.walletTypeId = walletTypeId;
     }
 
     @Override
@@ -69,8 +69,8 @@ public class Wallet {
                 "walletId='" + walletId + '\'' +
                 ", currencyCode='" + currencyCode + '\'' +
                 ", balance=" + balance +
-                ", investor=" + investor +
-                ", walletType=" + walletType +
+                ", investorId='" + investorId + '\'' +
+                ", walletTypeId='" + walletTypeId + '\'' +
                 '}';
     }
 }
