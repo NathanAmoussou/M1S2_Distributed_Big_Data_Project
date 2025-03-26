@@ -11,6 +11,10 @@ public class Country {
         this.countryName = countryName;
     }
 
+    public Country() {
+
+    }
+
     public String getCountryId() {
         return countryId;
     }

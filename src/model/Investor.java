@@ -12,12 +12,12 @@ public class Investor {
     private String phoneNumber;
     private LocalDateTime creationDate;
     private LocalDateTime lastUpdateDate;
-    private Address address;
+    private String addressId;
 
     public Investor() {
     }
 
-    public Investor(String investorId, String username, String password, String name, String surname, String email, String phoneNumber, LocalDateTime creationDate, LocalDateTime lastUpdateDate, Address address) {
+    public Investor(String investorId, String username, String password, String name, String surname, String email, String phoneNumber, LocalDateTime creationDate, LocalDateTime lastUpdateDate, String addressId) {
         this.investorId = investorId;
         this.username = username;
         this.password = password;
@@ -27,7 +27,7 @@ public class Investor {
         this.phoneNumber = phoneNumber;
         this.creationDate = creationDate;
         this.lastUpdateDate = lastUpdateDate;
-        this.address = address;
+        this.addressId = addressId;
     }
 
     public String getInvestorId() {
@@ -102,18 +102,18 @@ public class Investor {
         this.lastUpdateDate = lastUpdateDate;
     }
 
-    public Address getAddress() {
-        return address;
+    public String getAddressId() {
+        return addressId;
     }
 
-    public void setAddress(Address address) {
-        this.address = address;
+    public void setAddressId(String addressId) {
+        this.addressId = addressId;
     }
 
     @Override
     public String toString() {
         return "Investor{" +
-                "investorId=" + investorId +
+                "investorId='" + investorId + '\'' +
                 ", username='" + username + '\'' +
                 ", password='" + password + '\'' +
                 ", name='" + name + '\'' +
@@ -122,7 +122,7 @@ public class Investor {
                 ", phoneNumber='" + phoneNumber + '\'' +
                 ", creationDate=" + creationDate +
                 ", lastUpdateDate=" + lastUpdateDate +
-                ", address=" + address +
+                ", addressId='" + addressId + '\'' +
                 '}';
     }
 }
