@@ -3,20 +3,25 @@ package src.service;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
+import com.squareup.okhttp.OkHttpClient;
+import com.squareup.okhttp.Request;
+import com.squareup.okhttp.Response;
 import src.dao.StockDAO;
 import src.dao.StockPriceHistoryDAO;
 import src.model.Stock;
 import src.model.StockPriceHistory;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.math.BigDecimal;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.time.LocalDateTime;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import java.io.IOException;
-import okhttp3.*;
 
 
 public class StockMarketService {
@@ -27,6 +32,7 @@ public class StockMarketService {
     public StockMarketService(StockDAO stockDao, StockPriceHistoryDAO stockPriceHistoryDao) {
         this.stockDao = stockDao;
         this.stockPriceHistoryDao = stockPriceHistoryDao;
+        System.out.println("Service initialisé avec les DAO : " + stockDao + " et " + stockPriceHistoryDao);
     }
 
     /**
@@ -34,6 +40,7 @@ public class StockMarketService {
      * Note : ne pas fermer le scheduler immédiatement pour qu'il tourne en continu.
      */
     public void startScheduledUpdates() {
+
         try (ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor()) {
 
             scheduler.scheduleAtFixedRate(() -> {
@@ -71,48 +78,57 @@ public class StockMarketService {
         String apiUrl = "https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol="
                 + symbol + "&apikey=" + apiKey;
 
-        Request request = new Request.Builder()
-                .url(apiUrl)
-                .build();
+        HttpURLConnection connection = null;
+        String responseBody = "";
+        try {
+            URL url = new URL(apiUrl);
+            connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+            connection.setConnectTimeout(5000); // 5 secondes de timeout pour la connexion
+            connection.setReadTimeout(5000);    // 5 secondes de timeout pour la lecture
+
+            int responseCode = connection.getResponseCode();
+            if (responseCode != HttpURLConnection.HTTP_OK) {
+                System.err.println("Erreur HTTP pour " + symbol + " : " + responseCode);
+                return;
+            }
+
+            // Lecture de la réponse
+            BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+            StringBuilder response = new StringBuilder();
+            String inputLine;
+            while ((inputLine = in.readLine()) != null) {
+                response.append(inputLine);
+            }
+            in.close();
+            responseBody = response.toString();
+        } catch (IOException e) {
+            System.err.println("Erreur lors de l'appel à l'API pour " + symbol + " : " + e.getMessage());
+            return;
+        } finally {
+            if (connection != null) {
+                connection.disconnect();
+            }
+        }
 
         BigDecimal openPrice;
         BigDecimal highPrice;
         BigDecimal lowPrice;
         BigDecimal currentPrice;
 
-        try (Response response = httpClient.newCall(request).execute()) {
-            if (!response.isSuccessful()) {
-                System.err.println("Réponse non valide de l'API (code HTTP): " + response.code());
-                return;
-            }
-
-            if (response.body() == null) {
-                System.err.println("Réponse sans contenu (body nul).");
-                return;
-            }
-
-            String responseBody = response.body().string();
-
-            System.out.println(responseBody);
-
-            JsonObject jsonObj = JsonParser.parseString(responseBody).getAsJsonObject();
-
-            if (!jsonObj.has("Global Quote")) {
-                System.err.println("Format inattendu : pas de 'Global Quote'.");
-                return;
-            }
-
-            JsonObject globalQuote = jsonObj.getAsJsonObject("Global Quote");
-
-            openPrice = globalQuote.get("02. open").getAsBigDecimal();
-            highPrice = globalQuote.get("03. high").getAsBigDecimal();
-            lowPrice = globalQuote.get("04. low").getAsBigDecimal();
-            currentPrice = globalQuote.get("05. price").getAsBigDecimal();
-
-        } catch (IOException e) {
-            System.err.println("Erreur lors de l'appel à l'API : " + e.getMessage());
+        // Parsing de la réponse JSON
+        JsonObject jsonObj = JsonParser.parseString(responseBody).getAsJsonObject();
+        if (!jsonObj.has("Global Quote")) {
+            System.err.println("Format inattendu pour " + symbol + " : pas de 'Global Quote'");
             return;
         }
+
+        JsonObject globalQuote = jsonObj.getAsJsonObject("Global Quote");
+
+        openPrice = globalQuote.get("02. open").getAsBigDecimal();
+        highPrice = globalQuote.get("03. high").getAsBigDecimal();
+        lowPrice = globalQuote.get("04. low").getAsBigDecimal();
+        currentPrice = globalQuote.get("05. price").getAsBigDecimal();
 
         Stock existingStock = stockDao.findById(symbol);
 
