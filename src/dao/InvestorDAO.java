@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-public class InvestorDAO implements GenericDao<Investor> {
+public class InvestorDAO implements GenericDAO<Investor> {
 
     private final MongoCollection<Document> collection;
 

@@ -1,11 +1,26 @@
 package src.util;
 
+import redis.clients.jedis.*;
+
 public class RedisClient {
     private static RedisClient instance;
-    private Jedis jedis;
+    private UnifiedJedis jedis;
 
     private RedisClient() {
-        jedis = new Jedis("localhost", 6379);
+        JedisClientConfig config = DefaultJedisClientConfig.builder()
+                .user("default")
+                .password("1CXFwOcDEeS5osBZ8jrFD8ugxQGlF9wM")
+                .build();
+
+        try {
+            UnifiedJedis jedis = new UnifiedJedis(
+                    new HostAndPort("redis-13268.c339.eu-west-3-1.ec2.redns.redis-cloud.com", 13268),
+                    config
+            );
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
     }
 
     public static synchronized RedisClient getInstance() {
@@ -15,7 +30,7 @@ public class RedisClient {
         return instance;
     }
 
-    public Jedis getJedis() {
+    public UnifiedJedis getJedis() {
         return jedis;
     }
 }

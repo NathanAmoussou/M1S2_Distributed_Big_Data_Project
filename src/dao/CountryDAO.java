@@ -1,15 +1,13 @@
 package src.dao;
 
 import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoDatabase;
 import org.bson.Document;
 import src.model.Country;
-import src.model.Investor;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class CountryDAO implements GenericDao<Country> {
+public class CountryDAO implements GenericDAO<Country> {
 
     private final MongoCollection<Document> collection;
 

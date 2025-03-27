@@ -8,9 +8,9 @@ import src.model.Address;
 import java.util.ArrayList;
 import java.util.List;
 
-public class AddresseDAO implements GenericDao<Address> {
+public class AddresseDAO implements GenericDAO<Address> {
 
-    private MongoCollection<Document> collection;
+    private final MongoCollection<Document> collection;
 
     public AddresseDAO(MongoCollection<Document> collection) {
         this.collection = collection;

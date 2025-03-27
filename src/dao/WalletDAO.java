@@ -12,11 +12,11 @@ import java.util.List;
 
 import static com.mongodb.client.model.Filters.eq;
 
-public class WalletDao implements GenericDao<Wallet> {
+public class WalletDAO implements GenericDAO<Wallet> {
 
     private final MongoCollection<Document> collection;
 
-    public WalletDao(MongoDatabase database) {
+    public WalletDAO(MongoDatabase database) {
         this.collection = database.getCollection("wallets");
     }
 
