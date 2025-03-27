@@ -1,6 +1,7 @@
 package src.dao;
 
 import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
 import org.bson.Document;
 import src.model.StockPriceHistory;
 
@@ -11,8 +12,8 @@ import java.util.List;
 
 public class StockPriceHistoryDAO implements GenericDAO<StockPriceHistory>{
     private MongoCollection<Document> collection;
-    public StockPriceHistoryDAO(MongoCollection<Document> collection) {
-        this.collection = collection;
+    public StockPriceHistoryDAO(MongoDatabase database) {
+        this.collection = database.getCollection("stockPriceHistory");
     }
 
 

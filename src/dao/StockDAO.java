@@ -1,6 +1,7 @@
 package src.dao;
 
 import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
 import org.bson.Document;
 import src.model.Stock;
 
@@ -10,9 +11,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class StockDAO implements GenericDAO<Stock> {
-    private MongoCollection<Document> collection;
-    public StockDAO(MongoCollection<Document> collection) {
-        this.collection = collection;
+    private final MongoCollection<Document> collection;
+    public StockDAO(MongoDatabase database) {
+        this.collection = database.getCollection("stocks");
     }
 
     @Override
