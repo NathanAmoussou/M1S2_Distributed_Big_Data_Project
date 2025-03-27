@@ -39,11 +39,11 @@ public class TransactionDAO implements GenericDAO<Transaction> {
 
     @Override
     public List<Transaction> findAll() {
-       List<Document> docs = collection.find().into(new ArrayList<>());
-       for (Document doc : docs) {
-           System.out.println(doc);
-       }
-         return docs.stream().map(this::documentToTransaction).collect(Collectors.toList());
+       List<Transaction> transactions = new ArrayList<>();
+        for (Document doc : collection.find()) {
+            transactions.add(documentToTransaction(doc));
+        }
+        return transactions;
     }
 
     @Override
