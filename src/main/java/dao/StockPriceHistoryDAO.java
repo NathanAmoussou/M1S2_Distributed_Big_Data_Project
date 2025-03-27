@@ -13,12 +13,6 @@ import java.util.List;
 public class StockPriceHistoryDAO implements GenericDAO<StockPriceHistory> {
     private final MongoCollection<Document> collection;
 
-//    @Override
-//    public StockPriceHistory findById(String id) {
-//        System.out.println("Should not be called use findByStockPriceHistoryTicker instead");
-//        Document doc = collection.find(new Document("_id", id)).first();
-//        return doc != null ? documentToStockPriceHistory(doc) : null;
-//    }
 
     public StockPriceHistoryDAO(MongoDatabase database) {
         this.collection = database.getCollection("stockPriceHistory");
