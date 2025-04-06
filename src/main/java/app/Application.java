@@ -1,5 +1,7 @@
 package app;
 
+import java.util.List;
+
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoDatabase;
@@ -8,10 +10,7 @@ import dao.StockDAO;
 import dao.StockPriceHistoryDAO;
 import model.Stock;
 import model.StockPriceHistory;
-import service.StockMarketService;
 import service.crudStockService;
-
-import java.util.List;
 
 public class Application {
     public static void main(String[] args) {
@@ -34,12 +33,6 @@ public class Application {
         // Test historical data fetching
         System.out.println("\n---------- Testing Historical Data Fetch ----------");
         testHistoricalDataFetch(mongoConnectionString, dbName);
-
-        // Créer le service
-        StockMarketService stockMarketService = new StockMarketService(stockDao, historyDao);
-        
-        // Lancer la planification
-        // stockMarketService.startScheduledUpdates();
         
         // L'application continue de tourner...
         System.out.println("Application démarrée, la récupération périodique des indices boursiers est active.");
