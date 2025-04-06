@@ -1,15 +1,17 @@
 package dao;
 
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoDatabase;
-import com.mongodb.client.model.IndexOptions;
-import org.bson.Document;
-import model.Stock;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.bson.Document;
+
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.IndexOptions;
+
+import model.Stock;
 
 public class StockDAO implements GenericDAO<Stock> {
     private final MongoCollection<Document> collection;
@@ -65,7 +67,7 @@ public class StockDAO implements GenericDAO<Stock> {
                 .append("market", stock.getMarket())
                 .append("industry", stock.getIndustry())
                 .append("sector", stock.getSector())
-                .append("lastPrice", stock.getLastPrice().toString())
+                .append("lastPrice", stock.getLastPrice())
                 .append("lastUpdated", stock.getLastUpdated());
 
         collection.insertOne(doc);
@@ -79,7 +81,7 @@ public class StockDAO implements GenericDAO<Stock> {
                 .append("market", stock.getMarket())
                 .append("industry", stock.getIndustry())
                 .append("sector", stock.getSector())
-                .append("lastPrice", stock.getLastPrice().toString())
+                .append("lastPrice", stock.getLastPrice())
                 .append("lastUpdated", stock.getLastUpdated());
 
         collection.replaceOne(new Document("stockTicker", stock.getStockTicker()), doc);

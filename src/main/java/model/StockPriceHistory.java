@@ -12,7 +12,7 @@ public class StockPriceHistory {
     private BigDecimal lowPrice;
     private BigDecimal volume;
     private BigDecimal dividend;
-    private BigDecimal stock_split;
+    private BigDecimal stockSplit;
 
 
     public StockPriceHistory() {
@@ -27,7 +27,7 @@ public class StockPriceHistory {
             BigDecimal lowPrice,
             BigDecimal volume,
             BigDecimal dividend,
-            BigDecimal stock_split
+            BigDecimal stockSplit
     ) {
         this.stockPriceHistoryTicker = stockPriceHistoryTicker;
         this.dateTime = dateTime;
@@ -37,7 +37,7 @@ public class StockPriceHistory {
         this.lowPrice = lowPrice;
         this.volume = volume;
         this.dividend = dividend;
-        this.stock_split = stock_split;
+        this.stockSplit = stockSplit;
     }
 
     public String getStockPriceHistoryTicker() {
@@ -100,11 +100,11 @@ public class StockPriceHistory {
     public void setDividend(BigDecimal dividend) {
         this.dividend = dividend;
     }
-    public BigDecimal getStock_split() {
-        return stock_split;
+    public BigDecimal getStockSplit() {
+        return stockSplit;
     }
-    public void setStock_split(BigDecimal stock_split) {
-        this.stock_split = stock_split;
+    public void setStockSplit(BigDecimal stockSplit) {
+        this.stockSplit = stockSplit;
     }
 
 
@@ -119,7 +119,7 @@ public class StockPriceHistory {
                 ", lowPrice=" + lowPrice +
                 ", volume=" + volume +
                 ", dividend=" + dividend +
-                ", stock_split=" + stock_split +
+                ", stockSplit=" + stockSplit +
                 '}';
     }
 }

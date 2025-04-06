@@ -7,8 +7,11 @@ import com.mongodb.client.MongoDatabase;
 import dao.StockDAO;
 import dao.StockPriceHistoryDAO;
 import model.Stock;
+import model.StockPriceHistory;
 import service.StockMarketService;
 import service.crudStockService;
+
+import java.util.List;
 
 public class Application {
     public static void main(String[] args) {
@@ -24,9 +27,13 @@ public class Application {
         StockDAO stockDao = new StockDAO(database);
         StockPriceHistoryDAO historyDao = new StockPriceHistoryDAO(database);
 
-        // Test crudStockService
-        System.out.println("\n---------- Testing Stock CRUD Operations ----------");
-        testStockCrud(mongoConnectionString, dbName);
+        // Test regular CRUD operations
+//        System.out.println("\n---------- Testing Stock CRUD Operations ----------");
+//        testStockCrud(mongoConnectionString, dbName);
+        
+        // Test historical data fetching
+        System.out.println("\n---------- Testing Historical Data Fetch ----------");
+        testHistoricalDataFetch(mongoConnectionString, dbName);
 
         // Créer le service
         StockMarketService stockMarketService = new StockMarketService(stockDao, historyDao);
@@ -104,6 +111,58 @@ public class Application {
             e.printStackTrace();
         } finally {
             // Make sure to close the stockService properly
+            if (stockService != null) {
+                stockService.close();
+            }
+        }
+    }
+
+
+    /**
+     * Test fetching and storing historical data for a specific stock
+     */
+    private static void testHistoricalDataFetch(String mongoConnectionString, String dbName) {
+        crudStockService stockService = null;
+        try {
+            // Initialize the CRUD service
+            stockService = new crudStockService(mongoConnectionString, dbName);
+
+            System.out.println("\n---------- Testing Historical Data Fetch ----------");
+
+            // Create a stock with historical data (e.g., Microsoft)
+            Stock msftStock = stockService.createStock("MSFT", "");
+            if (msftStock != null) {
+                System.out.println("Successfully created Microsoft stock with historical data: " + msftStock);
+
+                // Get the database connection to verify data was saved
+                MongoClient mongoClient = MongoClients.create(mongoConnectionString);
+                MongoDatabase database = mongoClient.getDatabase(dbName);
+                StockPriceHistoryDAO historyDao = new StockPriceHistoryDAO(database);
+
+                // Get count of historical records saved
+                List<StockPriceHistory> msftHistory = historyDao.findAllByTicker("MSFT");
+                System.out.println("Saved " + msftHistory.size() + " historical data points for Microsoft");
+
+                // Display a few records as samples
+                if (!msftHistory.isEmpty()) {
+                    System.out.println("\nSample historical records:");
+                    int sampleSize = Math.min(5, msftHistory.size());
+                    for (int i = 0; i < sampleSize; i++) {
+                        System.out.println(msftHistory.get(i));
+                    }
+                }
+
+                mongoClient.close();
+            } else {
+                System.out.println("Failed to create Microsoft stock or it already exists");
+            }
+
+            System.out.println("\nHistorical data fetch test completed.");
+
+        } catch (Exception e) {
+            System.err.println("Error during historical data fetch test: " + e.getMessage());
+            e.printStackTrace();
+        } finally {
             if (stockService != null) {
                 stockService.close();
             }

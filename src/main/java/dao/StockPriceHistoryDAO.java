@@ -1,14 +1,16 @@
 package dao;
 
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoDatabase;
-import org.bson.Document;
-import model.StockPriceHistory;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.bson.Document;
+
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
+
+import model.StockPriceHistory;
 
 public class StockPriceHistoryDAO implements GenericDAO<StockPriceHistory> {
     private final MongoCollection<Document> collection;
@@ -16,6 +18,7 @@ public class StockPriceHistoryDAO implements GenericDAO<StockPriceHistory> {
 
     public StockPriceHistoryDAO(MongoDatabase database) {
         this.collection = database.getCollection("stockPriceHistory");
+        this.collection.createIndex(new Document("stockPriceHistoryTicker", 1)); // we ensure the tickers are indexed
     }
 
     @Override
@@ -42,32 +45,56 @@ public class StockPriceHistoryDAO implements GenericDAO<StockPriceHistory> {
        }
     }
 
+    /**
+     * Find all price history records for a given stock ticker
+     * @param ticker The stock ticker to find history for
+     * @return List of StockPriceHistory objects
+     */
+    public List<StockPriceHistory> findAllByTicker(String ticker) {
+        try {
+            List<StockPriceHistory> stockPriceHistories = new ArrayList<>();
+            for (Document doc : collection.find(new Document("stockPriceHistoryTicker", ticker))) {
+                stockPriceHistories.add(documentToStockPriceHistory(doc));
+            }
+            return stockPriceHistories;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ArrayList<>();
+        }
+    }
+
     @Override
     public void save(StockPriceHistory stockPriceHistory) {
-       try{
-           Document doc = new Document();
-           doc.append("stockPriceHistoryTicker", stockPriceHistory.getStockPriceHistoryTicker());
-           doc.append("openPrice", stockPriceHistory.getOpenPrice().toString());
-           doc.append("closePrice", stockPriceHistory.getClosePrice().toString());
-           doc.append("highPrice", stockPriceHistory.getHighPrice().toString());
-           doc.append("lowPrice", stockPriceHistory.getLowPrice().toString());
-           doc.append("dateTime", stockPriceHistory.getDateTime());
-           collection.insertOne(doc);
-       } catch (Exception e) {
-           e.printStackTrace();
-       }
+        try {
+            Document doc = new Document();
+            doc.append("stockPriceHistoryTicker", stockPriceHistory.getStockPriceHistoryTicker());
+            doc.append("openPrice", stockPriceHistory.getOpenPrice());
+            doc.append("closePrice", stockPriceHistory.getClosePrice());
+            doc.append("highPrice", stockPriceHistory.getHighPrice());
+            doc.append("lowPrice", stockPriceHistory.getLowPrice());
+            doc.append("volume", stockPriceHistory.getVolume());
+            doc.append("dividend", stockPriceHistory.getDividend());
+            doc.append("stockSplit", stockPriceHistory.getStockSplit());
+            doc.append("dateTime", stockPriceHistory.getDateTime());
+            collection.insertOne(doc);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
     public void update(StockPriceHistory stockPriceHistory) {
-        try{
+        try {
             Document doc = new Document("stockPriceHistoryTicker", stockPriceHistory.getStockPriceHistoryTicker())
-                    .append("openPrice", stockPriceHistory.getOpenPrice().toString())
-                    .append("closePrice", stockPriceHistory.getClosePrice().toString())
-                    .append("highPrice", stockPriceHistory.getHighPrice().toString())
-                    .append("lowPrice", stockPriceHistory.getLowPrice().toString())
+                    .append("openPrice", stockPriceHistory.getOpenPrice())
+                    .append("closePrice", stockPriceHistory.getClosePrice())
+                    .append("highPrice", stockPriceHistory.getHighPrice())
+                    .append("lowPrice", stockPriceHistory.getLowPrice())
+                    .append("volume", stockPriceHistory.getVolume())
+                    .append("dividend", stockPriceHistory.getDividend())
+                    .append("stockSplit", stockPriceHistory.getStockSplit())
                     .append("dateTime", stockPriceHistory.getDateTime());
-            // update the document with the same stockPriceHistoryTicker and same dateTime
+            
             collection.updateOne(new Document("stockPriceHistoryTicker", stockPriceHistory.getStockPriceHistoryTicker())
                     .append("dateTime", stockPriceHistory.getDateTime()), new Document("$set", doc));
         } catch (Exception e) {
@@ -96,17 +123,32 @@ public class StockPriceHistoryDAO implements GenericDAO<StockPriceHistory> {
     }
 
     private StockPriceHistory documentToStockPriceHistory(Document doc) {
-        return new StockPriceHistory(
-                doc.getString("stockPriceHistoryTicker"),
-                LocalDateTime.ofInstant(doc.getDate("dateTime").toInstant(), java.time.ZoneId.systemDefault()),
-                new BigDecimal(doc.getString("openPrice")),
-                new BigDecimal(doc.getString("closePrice")),
-                new BigDecimal(doc.getString("highPrice")),
-                new BigDecimal(doc.getString("lowPrice")),
-                new BigDecimal(doc.getString("volume")),
-                new BigDecimal(doc.getString("dividend")),
-                new BigDecimal(doc.getString("stock_split"))
+        StockPriceHistory history = new StockPriceHistory();
+        
+        history.setStockPriceHistoryTicker(doc.getString("stockPriceHistoryTicker"));
+        history.setDateTime(LocalDateTime.ofInstant(doc.getDate("dateTime").toInstant(), 
+                            java.time.ZoneId.systemDefault()));
+        
+        history.setOpenPrice(safeGetBigDecimal(doc, "openPrice"));
+        history.setClosePrice(safeGetBigDecimal(doc, "closePrice"));
+        history.setHighPrice(safeGetBigDecimal(doc, "highPrice"));
+        history.setLowPrice(safeGetBigDecimal(doc, "lowPrice"));
+        history.setVolume(safeGetBigDecimal(doc, "volume"));
+        history.setDividend(safeGetBigDecimal(doc, "dividend"));
+        history.setStockSplit(safeGetBigDecimal(doc, "stockSplit"));
+        
+        return history;
+    }
 
-        );
+    private BigDecimal safeGetBigDecimal(Document doc, String fieldName) {
+        String val = doc.getString(fieldName);
+        if (val == null || val.isEmpty()) {
+            return new BigDecimal("0.0");
+        }
+        try {
+            return new BigDecimal(val);
+        } catch (NumberFormatException e) {
+            return new BigDecimal("0.0");
+        }
     }
 }

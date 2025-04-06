@@ -1,8 +1,12 @@
 package service;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import dao.StockPriceHistoryDAO;
+import model.StockPriceHistory;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import com.mongodb.client.MongoClient;
@@ -42,7 +46,6 @@ public class crudStockService {
      * @return The created Stock object or null if creation fails
      */
     public Stock createStock(String stockTicker, String market) {
-
         String dbStockTicker = market != null && !market.isEmpty() ? stockTicker + "." + market : stockTicker;
         try {
             // First check if the stock already exists
@@ -63,7 +66,7 @@ public class crudStockService {
             Stock stock = new Stock(
                 stockInfo.getString("stock_name"),
                 dbStockTicker,
-                stockInfo.optString("market", ""), // peut etre ajouter notre market si jamais pas trouvé ? 
+                stockInfo.optString("market", ""),
                 stockInfo.optString("industry", ""),
                 stockInfo.optString("sector", ""),
                 new BigDecimal(stockInfo.optString("regular_market_price", "0.00")),
@@ -75,11 +78,131 @@ public class crudStockService {
             // Save to database
             stockDAO.save(stock);
             System.out.println("Created stock: " + stock);
+            
+            // Now fetch historical data from 2018 to current year in yearly chunks
+            fetchHistoricalData(stockTicker, market, dbStockTicker);
+            
             return stock;
         } catch (Exception e) {
             System.err.println("Error creating stock: " + e.getMessage());
             e.printStackTrace();
             return null;
+        }
+    }
+
+    /**
+     * Fetch historical data for a stock from 2018 to current year
+     * @param stockTicker The ticker symbol of the stock
+     * @param market Optional market identifier (can be empty)
+     * @param dbStockTicker The ticker symbol used in the database
+     */
+    private void fetchHistoricalData(String stockTicker, String market, String dbStockTicker) {
+        try {
+            // Get current year
+            int currentYear = LocalDateTime.now().getYear();
+            StockPriceHistoryDAO historyDAO = new StockPriceHistoryDAO(mongoClient.getDatabase(dbName));
+
+            System.out.println("Fetching historical data for " + dbStockTicker + " from 2018 to " + currentYear);
+
+            // Fetch data year by year from 2018 to current year
+            for (int year = 2018; year <= currentYear; year++) {
+                String startDate = year + "-01-01";
+                String endDate = year + "-12-31";
+
+                // If current year, only fetch until today
+                if (year == currentYear) {
+                    LocalDateTime now = LocalDateTime.now();
+                    endDate = String.format("%d-%02d-%02d", now.getYear(), now.getMonthValue(), now.getDayOfMonth());
+                }
+
+                System.out.println("Fetching data for " + year + " (" + startDate + " to " + endDate + ")");
+
+                // Fetch historical data from API
+                JSONArray historicalData = StockApiService.getStockData(stockTicker, market, startDate, endDate);
+
+                if (historicalData.length() > 0) {
+                    System.out.println("Retrieved " + historicalData.length() + " historical records for " + year);
+
+                    // Process and save each data point
+                    for (int i = 0; i < historicalData.length(); i++) {
+                        JSONObject dataPoint = historicalData.getJSONObject(i);
+
+                        // Parse the date from the data point
+                        String dateStr = dataPoint.optString("Date", "");
+                        LocalDateTime dateTime = null;
+
+                        try {
+                            // Handle date format like "Wed, 19 Aug 2020 04:00:00 GMT"
+                            java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", java.util.Locale.ENGLISH);
+                            java.util.Date date = sdf.parse(dateStr);
+                            dateTime = date.toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDateTime();
+                        } catch (Exception e1) {
+                            try {
+                                // Try with ISO format
+                                dateTime = LocalDateTime.parse(dateStr.replace("Z", ""));
+                            } catch (Exception e2) {
+                                try {
+                                    // Try with date only format (assuming time is midnight)
+                                    dateTime = LocalDate.parse(dateStr).atStartOfDay();
+                                } catch (Exception e3) {
+                                    System.err.println("Could not parse date: " + dateStr);
+                                    continue;
+                                }
+                            }
+                        }
+
+                        // Skip if we couldn't parse the date
+                        if (dateTime == null) {
+                            continue;
+                        }
+
+                        // Create StockPriceHistory object
+                        StockPriceHistory history = new StockPriceHistory();
+                        history.setStockPriceHistoryTicker(dbStockTicker);
+                        history.setDateTime(dateTime);
+
+                        // Handle numerical values with safe conversion
+                        history.setOpenPrice(safeParseBigDecimal(dataPoint.optString("Open", "0.0")));
+                        history.setClosePrice(safeParseBigDecimal(dataPoint.optString("Close", "0.0")));
+                        history.setHighPrice(safeParseBigDecimal(dataPoint.optString("High", "0.0")));
+                        history.setLowPrice(safeParseBigDecimal(dataPoint.optString("Low", "0.0")));
+                        history.setVolume(safeParseBigDecimal(dataPoint.optString("Volume", "0.0")));
+                        history.setDividend(safeParseBigDecimal(dataPoint.optString("Dividends", "0.0")));
+                        history.setStockSplit(safeParseBigDecimal(dataPoint.optString("Stock Splits", "0.0")));
+
+                        // Save to database
+                        historyDAO.save(history);
+                    }
+
+                    // Sleep to avoid overloading the API
+                    Thread.sleep(1000);
+                } else {
+                    System.out.println("No historical data available for " + year);
+                }
+            }
+
+            System.out.println("Finished fetching historical data for " + dbStockTicker);
+
+        } catch (Exception e) {
+            System.err.println("Error fetching historical data: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Safely parse a String to BigDecimal, handling null or invalid formats
+     * @param value The string to parse
+     * @return A BigDecimal representation or 0 if parsing fails
+     */
+    private BigDecimal safeParseBigDecimal(String value) {
+        if (value == null || value.isEmpty() || value.equals("null")) {
+            return new BigDecimal("0.0");
+        }
+
+        try {
+            return new BigDecimal(value);
+        } catch (NumberFormatException e) {
+            return new BigDecimal("0.0");
         }
     }
 
