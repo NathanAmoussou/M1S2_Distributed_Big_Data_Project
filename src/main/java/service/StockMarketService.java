@@ -5,6 +5,7 @@ import com.google.gson.JsonParser;
 
 import dao.StockDAO;
 import dao.StockPriceHistoryDAO;
+
 import model.Stock;
 import model.StockPriceHistory;
 
@@ -29,8 +30,7 @@ public class StockMarketService {
     }
 
     /**
-     * Méthode pour lancer la planification (toutes les minutes).
-     * Note : ne pas fermer le scheduler immédiatement pour qu'il tourne en continu.
+     * Méthode pour lancer la planification (toutes les minutes
      */
     public void startScheduledUpdates() {
         System.out.println("Scheduler starting...");

@@ -6,6 +6,7 @@ import com.mongodb.client.MongoDatabase;
 import dao.StockDAO;
 import dao.StockPriceHistoryDAO;
 import service.StockMarketService;
+import service.StockApiService;
 
 public class Application {
     public static void main(String[] args) {
@@ -19,11 +20,11 @@ public class Application {
         StockPriceHistoryDAO historyDao = new StockPriceHistoryDAO(database);
 
         // Créer le service
-        StockMarketService service = new StockMarketService(stockDao, historyDao);
-
+        StockMarketService stockMarketService = new StockMarketService(stockDao, historyDao);
+        StockApiService stockApiService = new StockApiService();
         // Lancer la planification
-        service.startScheduledUpdates();
-
+        stockMarketService.startScheduledUpdates();
+        stockApiService.testApi();
         // L'application continue de tourner...
         System.out.println("Application démarrée, la récupération périodique des indices boursiers est active.");
 
