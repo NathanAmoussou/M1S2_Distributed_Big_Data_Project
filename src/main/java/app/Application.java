@@ -3,28 +3,37 @@ package app;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoDatabase;
+
 import dao.StockDAO;
 import dao.StockPriceHistoryDAO;
+import model.Stock;
 import service.StockMarketService;
-import service.StockApiService;
+import service.crudStockService;
 
 public class Application {
     public static void main(String[] args) {
+        // MongoDB connection string
+        String mongoConnectionString = "mongodb://localhost:27017";
+        String dbName = "gestionBourse";
 
         // Initialiser la connexion MongoDB
-        MongoClient mongoClient = MongoClients.create("mongodb://localhost:27017");
-        MongoDatabase database = mongoClient.getDatabase("gestionBourse");
+        MongoClient mongoClient = MongoClients.create(mongoConnectionString);
+        MongoDatabase database = mongoClient.getDatabase(dbName);
 
         // Initialiser les DAO
         StockDAO stockDao = new StockDAO(database);
         StockPriceHistoryDAO historyDao = new StockPriceHistoryDAO(database);
 
+        // Test crudStockService
+        System.out.println("\n---------- Testing Stock CRUD Operations ----------");
+        testStockCrud(mongoConnectionString, dbName);
+
         // Créer le service
         StockMarketService stockMarketService = new StockMarketService(stockDao, historyDao);
-        StockApiService stockApiService = new StockApiService();
+        
         // Lancer la planification
-        stockMarketService.startScheduledUpdates();
-        stockApiService.testApi();
+        // stockMarketService.startScheduledUpdates();
+        
         // L'application continue de tourner...
         System.out.println("Application démarrée, la récupération périodique des indices boursiers est active.");
 
@@ -34,7 +43,70 @@ public class Application {
             Thread.sleep(Long.MAX_VALUE); // Keeps the application alive
         } catch (InterruptedException e) {
             System.err.println("Main thread interrupted: " + e.getMessage());
+        } finally {
+            // Clean up resources
+            mongoClient.close();
+        }
+    }
+    
+    /**
+     * Test method to verify if the crudStockService works correctly
+     */
+    private static void testStockCrud(String mongoConnectionString, String dbName) {
+        crudStockService stockService = null;
+        try {
+            // Initialize the CRUD service
+            stockService = new crudStockService(mongoConnectionString, dbName);
+            
+            // Test stock creation for different stocks
+            System.out.println("Testing stock creation...");
+            
+            // Create a US stock (Apple)
+            Stock appleStock = stockService.createStock("AAPL", "");
+            if (appleStock != null) {
+                System.out.println("Successfully created Apple stock: " + appleStock);
+            } else {
+                System.out.println("Failed to create Apple stock or it already exists");
+            }
+            
+            // Create a European stock (LVMH on Paris exchange)
+            Stock lvmhStock = stockService.createStock("MC", "PA");
+            if (lvmhStock != null) {
+                System.out.println("Successfully created LVMH stock: " + lvmhStock);
+            } else {
+                System.out.println("Failed to create LVMH stock or it already exists");
+            }
+            
+            // Read back the created stocks to verify
+            System.out.println("\nTesting stock retrieval...");
+            
+            // Read Apple stock
+            Stock retrievedApple = stockService.readStock("AAPL");
+            if (retrievedApple != null) {
+                System.out.println("Retrieved Apple stock: " + retrievedApple);
+            }
+            
+            // Read LVMH stock
+            Stock retrievedLVMH = stockService.readStock("MC.PA");
+            if (retrievedLVMH != null) {
+                System.out.println("Retrieved LVMH stock: " + retrievedLVMH);
+            }
+            
+            // Test listing all stocks
+            System.out.println("\nListing all stocks in database:");
+            stockService.getAllStocks().forEach(stock -> {
+                System.out.println(" - " + stock);
+            });
+            
+            System.out.println("\nStock CRUD operations test completed.");
+        } catch (Exception e) {
+            System.err.println("Error during stock CRUD test: " + e.getMessage());
+            e.printStackTrace();
+        } finally {
+            // Make sure to close the stockService properly
+            if (stockService != null) {
+                stockService.close();
+            }
         }
     }
 }
-

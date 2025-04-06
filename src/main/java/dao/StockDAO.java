@@ -29,9 +29,12 @@ public class StockDAO implements GenericDAO<Stock> {
                 doc.getString("stockName"),
                 doc.getString("stockTicker"),
                 doc.getString("market"),
+                doc.getString("industry"),
                 doc.getString("sector"),
                 new BigDecimal(doc.getString("lastPrice")),
-                LocalDateTime.ofInstant(doc.getDate("lastUpdated").toInstant(), java.time.ZoneId.systemDefault())
+                LocalDateTime.ofInstant(doc.getDate("lastUpdated").toInstant(), java.time.ZoneId.systemDefault()),
+                doc.getString("country"),
+                doc.getString("currency")
         );
     }
 
@@ -57,11 +60,12 @@ public class StockDAO implements GenericDAO<Stock> {
     @Override
     public void save(Stock stock) {
         Document doc = new Document()
-                .append("stockTicker", stock.getStockTicker())
                 .append("stockName", stock.getStockName())
-                .append("lastPrice", stock.getLastPrice().toString())
+                .append("stockTicker", stock.getStockTicker())
                 .append("market", stock.getMarket())
+                .append("industry", stock.getIndustry())
                 .append("sector", stock.getSector())
+                .append("lastPrice", stock.getLastPrice().toString())
                 .append("lastUpdated", stock.getLastUpdated());
 
         collection.insertOne(doc);
@@ -70,11 +74,12 @@ public class StockDAO implements GenericDAO<Stock> {
     @Override
     public void update(Stock stock) {
         Document doc = new Document()
-                .append("stockTicker", stock.getStockTicker())
                 .append("stockName", stock.getStockName())
-                .append("lastPrice", stock.getLastPrice().toString())
+                .append("stockTicker", stock.getStockTicker())
                 .append("market", stock.getMarket())
+                .append("industry", stock.getIndustry())
                 .append("sector", stock.getSector())
+                .append("lastPrice", stock.getLastPrice().toString())
                 .append("lastUpdated", stock.getLastUpdated());
 
         collection.replaceOne(new Document("stockTicker", stock.getStockTicker()), doc);

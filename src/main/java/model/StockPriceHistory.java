@@ -4,23 +4,40 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 public class StockPriceHistory {
-    private String stockPriceHistoryTicker;
+    private String stockPriceHistoryTicker; // Must include the market ex: "MC.PA"
     private LocalDateTime dateTime;
     private BigDecimal openPrice;
     private BigDecimal closePrice;
     private BigDecimal highPrice;
     private BigDecimal lowPrice;
+    private BigDecimal volume;
+    private BigDecimal dividend;
+    private BigDecimal stock_split;
+
 
     public StockPriceHistory() {
     }
 
-    public StockPriceHistory(String stockPriceHistoryTicker, LocalDateTime dateTime, BigDecimal openPrice, BigDecimal closePrice, BigDecimal highPrice, BigDecimal lowPrice) {
+    public StockPriceHistory(
+            String stockPriceHistoryTicker,
+            LocalDateTime dateTime,
+            BigDecimal openPrice,
+            BigDecimal closePrice,
+            BigDecimal highPrice,
+            BigDecimal lowPrice,
+            BigDecimal volume,
+            BigDecimal dividend,
+            BigDecimal stock_split
+    ) {
         this.stockPriceHistoryTicker = stockPriceHistoryTicker;
         this.dateTime = dateTime;
         this.openPrice = openPrice;
         this.closePrice = closePrice;
         this.highPrice = highPrice;
         this.lowPrice = lowPrice;
+        this.volume = volume;
+        this.dividend = dividend;
+        this.stock_split = stock_split;
     }
 
     public String getStockPriceHistoryTicker() {
@@ -71,6 +88,26 @@ public class StockPriceHistory {
         this.lowPrice = lowPrice;
     }
 
+    public BigDecimal getVolume() {
+        return volume;
+    }
+    public void setVolume(BigDecimal volume) {
+        this.volume = volume;
+    }
+    public BigDecimal getDividend() {
+        return dividend;
+    }
+    public void setDividend(BigDecimal dividend) {
+        this.dividend = dividend;
+    }
+    public BigDecimal getStock_split() {
+        return stock_split;
+    }
+    public void setStock_split(BigDecimal stock_split) {
+        this.stock_split = stock_split;
+    }
+
+
     @Override
     public String toString() {
         return "StockPriceHistory{" +
@@ -80,6 +117,9 @@ public class StockPriceHistory {
                 ", closePrice=" + closePrice +
                 ", highPrice=" + highPrice +
                 ", lowPrice=" + lowPrice +
+                ", volume=" + volume +
+                ", dividend=" + dividend +
+                ", stock_split=" + stock_split +
                 '}';
     }
 }

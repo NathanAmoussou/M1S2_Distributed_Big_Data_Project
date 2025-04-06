@@ -102,7 +102,11 @@ public class StockPriceHistoryDAO implements GenericDAO<StockPriceHistory> {
                 new BigDecimal(doc.getString("openPrice")),
                 new BigDecimal(doc.getString("closePrice")),
                 new BigDecimal(doc.getString("highPrice")),
-                new BigDecimal(doc.getString("lowPrice"))
+                new BigDecimal(doc.getString("lowPrice")),
+                new BigDecimal(doc.getString("volume")),
+                new BigDecimal(doc.getString("dividend")),
+                new BigDecimal(doc.getString("stock_split"))
+
         );
     }
 }
