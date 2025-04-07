@@ -1,0 +1,124 @@
+{
+	"info": {
+		"_postman_id": "139b0cb4-9c87-403c-898b-8e1f6d2291c2",
+		"name": "projetBado",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "39090126"
+	},
+	"item": [
+		{
+			"name": "create investor",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"username\": \"mrbado\",\r\n  \"password\": \"test\",\r\n  \"name\": \"bado\",\r\n  \"surname\": \"bd\",\r\n  \"email\": \"bado.bd@bado.gddgxd\",\r\n  \"phoneNumber\": \"1111111111111111\",\r\n  \"addressId\": \"addr2\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8000/investors",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"investors"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "add fund",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"investorId\": \"e96228bf-3cd5-4576-8db4-0107fbe594f2\",\r\n  \"amount\": \"0.0\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8000/investors/addFunds",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"investors",
+						"addFunds"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "invest",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"investorId\": \"e96228bf-3cd5-4576-8db4-0107fbe594f2\",\r\n  \"stockTicker\": \"AAPL\",\r\n  \"quantity\": 10\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8000/investors/invest",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"investors",
+						"invest"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "get all investors",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8000/investors",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"investors"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

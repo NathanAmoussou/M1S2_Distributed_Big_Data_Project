@@ -32,8 +32,9 @@ public class InvestorDAO implements GenericDAO<Investor> {
         investor.setSurname(doc.getString("surname"));
         investor.setEmail(doc.getString("email"));
         investor.setPhoneNumber(doc.getString("phoneNumber"));
-        investor.setCreationDate(LocalDateTime.from(doc.getDate("creationDate").toInstant()));
-        investor.setLastUpdateDate(LocalDateTime.from(doc.getDate("lastUpdateDate").toInstant()));
+
+        investor.setCreationDate(LocalDateTime.ofInstant(doc.getDate("creationDate").toInstant(), java.time.ZoneId.systemDefault()));
+        investor.setLastUpdateDate(LocalDateTime.ofInstant(doc.getDate("lastUpdateDate").toInstant(), java.time.ZoneId.systemDefault()));
         investor.setAddressId(doc.getString("addressId"));
         return investor;
     }
@@ -42,6 +43,7 @@ public class InvestorDAO implements GenericDAO<Investor> {
     public List<Investor> findAll() {
         List<Investor> result = new ArrayList<>();
         for (Document doc : collection.find()) {
+            System.out.println(doc.toJson());
             result.add(documentToInvestor(doc));
         }
         return result;

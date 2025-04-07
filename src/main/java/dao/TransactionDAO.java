@@ -29,10 +29,10 @@ public class TransactionDAO implements GenericDAO<Transaction> {
         transaction.setTransactionStatusId(doc.getString("transactionStatusId"));
         transaction.setQuantity(doc.getInteger("quantity"));
         transaction.setTransactionTypesId(doc.getString("transactionTypesId"));
-        transaction.setCreatedAt(LocalDateTime.from(doc.getDate("createdAt").toInstant()));
+        transaction.setCreatedAt(LocalDateTime.ofInstant(doc.getDate("createdAt").toInstant(), java.time.ZoneId.systemDefault()));
+        transaction.setUpdatedAt(LocalDateTime.ofInstant(doc.getDate("updatedAt").toInstant(), java.time.ZoneId.systemDefault()));
         transaction.setStockId(doc.getString("stockId"));
         transaction.setWalletId(doc.getString("walletId"));
-        transaction.setUpdatedAt(LocalDateTime.from(doc.getDate("updatedAt").toInstant()));
 
         return transaction;
     }
