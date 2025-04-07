@@ -69,4 +69,10 @@ public class InvestorService {
         walletDAO.update(wallet);
         return wallet;
     }
+
+    public Investor updateInvestor(Investor investor) {
+        investor.setLastUpdateDate(LocalDateTime.now());
+        investorDAO.update(investor);
+        return investor;
+    }
 }

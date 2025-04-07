@@ -45,6 +45,10 @@ public class RestApiServer {
         server.createContext("/investors/holdings", new HoldingsHandler());
         server.createContext("/investors/transactions", new TransactionsHandler());
         server.createContext("/assets", new AssetsHandler());
+        server.createContext("/investors/sell", new SellHandler());
+        server.createContext("/assets/transactions", new AssetsTransactionsHandler());
+        server.createContext("/investors/wallet", new WalletHandler());
+        server.createContext("/investors/update", new UpdateInvestorHandler());
     }
 
     public void start() {
@@ -286,6 +290,173 @@ public class RestApiServer {
             JSONObject responseJson = new JSONObject();
             responseJson.put("assets", arr);
             sendResponse(exchange, 200, responseJson.toString());
+        }
+    }
+
+    class SellHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            if(!"POST".equalsIgnoreCase(exchange.getRequestMethod())) {
+                JSONObject errorJson = new JSONObject();
+                errorJson.put("error", "Méthode non autorisée");
+                sendResponse(exchange, 405, errorJson.toString());
+                return;
+            }
+            String body = readRequestBody(exchange);
+            JSONObject requestJson = new JSONObject(body);
+            String investorId = requestJson.optString("investorId");
+            String stockTicker = requestJson.optString("stockTicker");
+            int quantity = requestJson.optInt("quantity", 0);
+            JSONObject responseJson = new JSONObject();
+            try {
+                Transaction transaction = investmentService.sellAsset(investorId, stockTicker, quantity);
+                responseJson.put("transactionId", transaction.getTransactionId());
+                responseJson.put("stockTicker", transaction.getStockId());
+                responseJson.put("quantity", transaction.getQuantity());
+                responseJson.put("priceAtTransaction", transaction.getPriceAtTransaction());
+                sendResponse(exchange, 200, responseJson.toString());
+            } catch(Exception e) {
+                responseJson.put("error", e.getMessage());
+                sendResponse(exchange, 500, responseJson.toString());
+            }
+        }
+    }
+
+    // Handler pour consulter les transactions d'un actif
+    class AssetsTransactionsHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            if(!"GET".equalsIgnoreCase(exchange.getRequestMethod())){
+                JSONObject errorJson = new JSONObject();
+                errorJson.put("error", "Méthode non autorisée");
+                sendResponse(exchange, 405, errorJson.toString());
+                return;
+            }
+            String query = exchange.getRequestURI().getQuery();
+            String stockTicker = "";
+            if(query != null && query.contains("stockTicker=")) {
+                stockTicker = query.split("stockTicker=")[1];
+            }
+            JSONObject responseJson = new JSONObject();
+            if(stockTicker.isEmpty()){
+                responseJson.put("error", "Paramètre stockTicker manquant");
+                sendResponse(exchange, 400, responseJson.toString());
+                return;
+            }
+            TransactionDAO transactionDAO = new TransactionDAO(database.getCollection("transactions"));
+            List<Transaction> transactions = transactionDAO.findByStockId(stockTicker);
+            JSONArray arr = new JSONArray();
+            for(Transaction t : transactions){
+                JSONObject obj = new JSONObject();
+                obj.put("transactionId", t.getTransactionId());
+                obj.put("walletId", t.getWalletId());
+                obj.put("quantity", t.getQuantity());
+                obj.put("priceAtTransaction", t.getPriceAtTransaction());
+                obj.put("transactionType", t.getTransactionTypesId());
+                obj.put("transactionStatus", t.getTransactionStatusId());
+                obj.put("createdAt", t.getCreatedAt().toString());
+                arr.put(obj);
+            }
+            responseJson.put("transactions", arr);
+            sendResponse(exchange, 200, responseJson.toString());
+        }
+    }
+
+    // Handler pour consulter le portefeuille d'un investisseur
+    class WalletHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            if(!"GET".equalsIgnoreCase(exchange.getRequestMethod())){
+                JSONObject errorJson = new JSONObject();
+                errorJson.put("error", "Méthode non autorisée");
+                sendResponse(exchange, 405, errorJson.toString());
+                return;
+            }
+            String query = exchange.getRequestURI().getQuery();
+            String investorId = "";
+            if(query != null && query.contains("investorId=")) {
+                investorId = query.split("investorId=")[1];
+            }
+            JSONObject responseJson = new JSONObject();
+            if(investorId.isEmpty()){
+                responseJson.put("error", "Paramètre investorId manquant");
+                sendResponse(exchange, 400, responseJson.toString());
+                return;
+            }
+            Wallet wallet = new dao.WalletDAO(database).findById(investorId);
+            if(wallet == null){
+                responseJson.put("error", "Portefeuille non trouvé");
+                sendResponse(exchange, 404, responseJson.toString());
+                return;
+            }
+            JSONObject walletJson = new JSONObject();
+            walletJson.put("walletId", wallet.getWalletId());
+            walletJson.put("balance", wallet.getBalance());
+            walletJson.put("currencyCode", wallet.getCurrencyCode());
+            responseJson.put("wallet", walletJson);
+            sendResponse(exchange, 200, responseJson.toString());
+        }
+    }
+
+    // Handler pour mettre à jour le profil d'un investisseur
+    class UpdateInvestorHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            if(!"PUT".equalsIgnoreCase(exchange.getRequestMethod())){
+                JSONObject errorJson = new JSONObject();
+                errorJson.put("error", "Méthode non autorisée");
+                sendResponse(exchange, 405, errorJson.toString());
+                return;
+            }
+            String body = readRequestBody(exchange);
+            JSONObject requestJson = new JSONObject(body);
+            String investorId = requestJson.optString("investorId");
+            if(investorId.isEmpty()){
+                JSONObject errorJson = new JSONObject();
+                errorJson.put("error", "Paramètre investorId manquant");
+                sendResponse(exchange, 400, errorJson.toString());
+                return;
+            }
+            Investor investor = investorService.getInvestor(investorId);
+            if(investor == null) {
+                JSONObject errorJson = new JSONObject();
+                errorJson.put("error", "Investisseur non trouvé");
+                sendResponse(exchange, 404, errorJson.toString());
+                return;
+            }
+            // Mise à jour des champs modifiables
+            if(requestJson.has("username")) {
+                investor.setUsername(requestJson.getString("username"));
+            }
+            if(requestJson.has("password")) {
+                investor.setPassword(requestJson.getString("password"));
+            }
+            if(requestJson.has("name")) {
+                investor.setName(requestJson.getString("name"));
+            }
+            if(requestJson.has("surname")) {
+                investor.setSurname(requestJson.getString("surname"));
+            }
+            if(requestJson.has("email")) {
+                investor.setEmail(requestJson.getString("email"));
+            }
+            if(requestJson.has("phoneNumber")) {
+                investor.setPhoneNumber(requestJson.getString("phoneNumber"));
+            }
+            try {
+                Investor updatedInvestor = investorService.updateInvestor(investor);
+                JSONObject responseJson = new JSONObject();
+                responseJson.put("investorId", updatedInvestor.getInvestorId());
+                responseJson.put("username", updatedInvestor.getUsername());
+                responseJson.put("name", updatedInvestor.getName());
+                responseJson.put("surname", updatedInvestor.getSurname());
+                responseJson.put("email", updatedInvestor.getEmail());
+                sendResponse(exchange, 200, responseJson.toString());
+            } catch(Exception e) {
+                JSONObject errorJson = new JSONObject();
+                errorJson.put("error", e.getMessage());
+                sendResponse(exchange, 500, errorJson.toString());
+            }
         }
     }
 

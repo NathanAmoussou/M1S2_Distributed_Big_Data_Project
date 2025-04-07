@@ -91,4 +91,12 @@ public class TransactionDAO implements GenericDAO<Transaction> {
         return result;
     }
 
+    public List<Transaction> findByStockId(String stockTicker) {
+        List<Transaction> result = new ArrayList<>();
+        for (Document doc : collection.find(new Document("stockId", stockTicker))) {
+            result.add(documentToTransaction(doc));
+        }
+        return result;
+    }
+
 }

@@ -13,6 +13,7 @@ import model.Wallet;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 public class InvestmentService {
@@ -94,6 +95,69 @@ public class InvestmentService {
             holding.setAveragePurchasePrice(newAvgPrice);
             holdingsDAO.update(holding);
         }
+
+        return transaction;
+    }
+
+    /**
+     * Permet à un investisseur de vendre une quantité d’un actif.
+     * La vente ajoute des fonds au portefeuille et met à jour le holding correspondant.
+     */
+    public Transaction sellAsset(String investorId, String stockTicker, int quantity) {
+        Wallet wallet = walletDAO.findById(investorId);
+        if(wallet == null) {
+            throw new RuntimeException("Portefeuille non trouvé pour l’investisseur : " + investorId);
+        }
+
+        // Recherche du holding pour cet actif
+        Holdings existingHolding = null;
+        List<Holdings> holdings = holdingsDAO.findByWalletId(wallet.getWalletId());
+        for (Holdings h : holdings) {
+            if(h.getStockId().equals(stockTicker)) {
+                existingHolding = h;
+                break;
+            }
+        }
+
+        if(existingHolding == null) {
+            throw new RuntimeException("Aucun actif " + stockTicker + " détenu par l’investisseur");
+        }
+        if(existingHolding.getQuantity() < quantity) {
+            throw new RuntimeException("Quantité insuffisante pour la vente. Vous détenez " + existingHolding.getQuantity());
+        }
+
+        // Récupération du cours actuel
+        Stock stock = stockDAO.findByStockTicker(stockTicker);
+        if(stock == null) {
+            throw new RuntimeException("Action non trouvée : " + stockTicker);
+        }
+        BigDecimal price = stock.getLastPrice();
+        BigDecimal saleAmount = price.multiply(new BigDecimal(quantity));
+
+        // Mise à jour du portefeuille : ajout des fonds issus de la vente
+        wallet.setBalance(wallet.getBalance().add(saleAmount));
+        walletDAO.update(wallet);
+
+        // Mise à jour du holding : diminution ou suppression
+        if(existingHolding.getQuantity() == quantity) {
+            holdingsDAO.deleteById(existingHolding.getHoldingsId());
+        } else {
+            existingHolding.setQuantity(existingHolding.getQuantity() - quantity);
+            holdingsDAO.update(existingHolding);
+        }
+
+        // Création de la transaction de vente
+        Transaction transaction = new Transaction();
+        transaction.setTransactionId(UUID.randomUUID().toString());
+        transaction.setPriceAtTransaction(price);
+        transaction.setQuantity(quantity);
+        transaction.setTransactionTypesId("SELL");
+        transaction.setTransactionStatusId("COMPLETED");
+        transaction.setCreatedAt(LocalDateTime.now());
+        transaction.setStockId(stockTicker);
+        transaction.setWalletId(wallet.getWalletId());
+        transaction.setUpdatedAt(LocalDateTime.now());
+        transactionDAO.save(transaction);
 
         return transaction;
     }
