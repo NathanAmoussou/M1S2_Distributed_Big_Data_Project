@@ -20,7 +20,7 @@ public class crudStockService {
     private final StockDAO stockDAO;
     private final String mongoConnectionString;
     private final String dbName;
-    private MongoClient mongoClient; // Keep a reference to the MongoClient
+    private final MongoClient mongoClient; // Keep a reference to the MongoClient
 
     public crudStockService(StockDAO stockDAO) {
         this.stockDAO = stockDAO;

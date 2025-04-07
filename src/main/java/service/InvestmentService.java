@@ -11,6 +11,7 @@ import model.Transaction;
 import model.Wallet;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -87,7 +88,7 @@ public class InvestmentService {
             BigDecimal oldTotalCost = holding.getAveragePurchasePrice().multiply(new BigDecimal(holding.getQuantity()));
             BigDecimal newTotalCost = oldTotalCost.add(totalCost);
             int newQuantity = holding.getQuantity() + quantity;
-            BigDecimal newAvgPrice = newTotalCost.divide(new BigDecimal(newQuantity), BigDecimal.ROUND_HALF_UP);
+            BigDecimal newAvgPrice = newTotalCost.divide(new BigDecimal(newQuantity), RoundingMode.HALF_UP);
 
             holding.setQuantity(newQuantity);
             holding.setAveragePurchasePrice(newAvgPrice);

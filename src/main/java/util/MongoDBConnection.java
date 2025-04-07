@@ -6,8 +6,8 @@ import com.mongodb.client.MongoDatabase;
 
 public class MongoDBConnection {
     private static MongoDBConnection instance;
-    private MongoClient client;
-    private MongoDatabase database;
+    private final MongoClient client;
+    private final MongoDatabase database;
 
     private MongoDBConnection() {
         client = MongoClients.create("mongodb://localhost:27017");

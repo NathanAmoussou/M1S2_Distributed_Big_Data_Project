@@ -6,9 +6,10 @@ import com.mongodb.client.MongoDatabase;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
-import model.Investor;
-import model.Transaction;
-import model.Wallet;
+import dao.HoldingsDAO;
+import dao.StockDAO;
+import dao.TransactionDAO;
+import model.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import service.InvestmentService;
@@ -23,11 +24,11 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 public class RestApiServer {
-    private HttpServer server;
-    private InvestorService investorService;
-    private InvestmentService investmentService;
-    private MongoClient mongoClient;
-    private MongoDatabase database;
+    private final HttpServer server;
+    private final InvestorService investorService;
+    private final InvestmentService investmentService;
+    private final MongoClient mongoClient;
+    private final MongoDatabase database;
 
     public RestApiServer(String mongoUri, String dbName, int port) throws IOException {
         mongoClient = MongoClients.create(mongoUri);
@@ -41,6 +42,9 @@ public class RestApiServer {
         server.createContext("/investors", new InvestorsHandler());
         server.createContext("/investors/addFunds", new AddFundsHandler());
         server.createContext("/investors/invest", new InvestHandler());
+        server.createContext("/investors/holdings", new HoldingsHandler());
+        server.createContext("/investors/transactions", new TransactionsHandler());
+        server.createContext("/assets", new AssetsHandler());
     }
 
     public void start() {
@@ -176,4 +180,113 @@ public class RestApiServer {
         os.write(bytes);
         os.close();
     }
+
+    // Handler pour /investors/holdings (GET)
+    // Exemple d’URL: http://localhost:8000/investors/holdings?investorId=123
+    class HoldingsHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            if(!"GET".equalsIgnoreCase(exchange.getRequestMethod())){
+                JSONObject errorJson = new JSONObject();
+                errorJson.put("error", "Méthode non autorisée");
+                sendResponse(exchange, 405, errorJson.toString());
+                return;
+            }
+            String query = exchange.getRequestURI().getQuery();
+            String investorId = "";
+            if(query != null && query.contains("investorId=")) {
+                investorId = query.split("investorId=")[1];
+            }
+            JSONObject responseJson = new JSONObject();
+            if(investorId.isEmpty()){
+                responseJson.put("error", "Paramètre investorId manquant");
+                sendResponse(exchange, 400, responseJson.toString());
+                return;
+            }
+            HoldingsDAO holdingsDAO = new HoldingsDAO(database.getCollection("holdings"));
+            List<Holdings> holdings = holdingsDAO.findByWalletId(investorId);
+            JSONArray arr = new JSONArray();
+            for(Holdings h : holdings){
+                JSONObject obj = new JSONObject();
+                obj.put("holdingsId", h.getHoldingsId());
+                obj.put("stockId", h.getStockId());
+                obj.put("quantity", h.getQuantity());
+                obj.put("averagePurchasePrice", h.getAveragePurchasePrice());
+                arr.put(obj);
+            }
+            responseJson.put("holdings", arr);
+            sendResponse(exchange, 200, responseJson.toString());
+        }
+    }
+
+    // Handler pour /investors/transactions (GET)
+    // Exemple d’URL: http://localhost:8000/investors/transactions?investorId=123
+    class TransactionsHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            if(!"GET".equalsIgnoreCase(exchange.getRequestMethod())){
+                JSONObject errorJson = new JSONObject();
+                errorJson.put("error", "Méthode non autorisée");
+                sendResponse(exchange, 405, errorJson.toString());
+                return;
+            }
+            String query = exchange.getRequestURI().getQuery();
+            String investorId = "";
+            if(query != null && query.contains("investorId=")) {
+                investorId = query.split("investorId=")[1];
+            }
+            JSONObject responseJson = new JSONObject();
+            if(investorId.isEmpty()){
+                responseJson.put("error", "Paramètre investorId manquant");
+                sendResponse(exchange, 400, responseJson.toString());
+                return;
+            }
+            TransactionDAO transactionDAO = new TransactionDAO(database.getCollection("transactions"));
+            List<Transaction> transactions = transactionDAO.findByWalletId(investorId);
+            JSONArray arr = new JSONArray();
+            for(Transaction t : transactions){
+                JSONObject obj = new JSONObject();
+                obj.put("transactionId", t.getTransactionId());
+                obj.put("stockId", t.getStockId());
+                obj.put("quantity", t.getQuantity());
+                obj.put("priceAtTransaction", t.getPriceAtTransaction());
+                obj.put("transactionType", t.getTransactionTypesId());
+                obj.put("transactionStatus", t.getTransactionStatusId());
+                obj.put("createdAt", t.getCreatedAt().toString());
+                arr.put(obj);
+            }
+            responseJson.put("transactions", arr);
+            sendResponse(exchange, 200, responseJson.toString());
+        }
+    }
+
+    // Handler pour /assets (GET) – liste de tous les actifs disponibles
+    class AssetsHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            if(!"GET".equalsIgnoreCase(exchange.getRequestMethod())){
+                JSONObject errorJson = new JSONObject();
+                errorJson.put("error", "Méthode non autorisée");
+                sendResponse(exchange, 405, errorJson.toString());
+                return;
+            }
+            StockDAO stockDAO = new StockDAO(database);
+            List<Stock> stocks = stockDAO.findAll();
+            JSONArray arr = new JSONArray();
+            for(Stock s : stocks) {
+                JSONObject obj = new JSONObject();
+                obj.put("stockName", s.getStockName());
+                obj.put("stockTicker", s.getStockTicker());
+                obj.put("market", s.getMarket());
+                obj.put("industry", s.getIndustry());
+                obj.put("sector", s.getSector());
+                obj.put("lastPrice", s.getLastPrice());
+                arr.put(obj);
+            }
+            JSONObject responseJson = new JSONObject();
+            responseJson.put("assets", arr);
+            sendResponse(exchange, 200, responseJson.toString());
+        }
+    }
+
 }

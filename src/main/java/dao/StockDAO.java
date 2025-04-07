@@ -27,18 +27,32 @@ public class StockDAO implements GenericDAO<Stock> {
     }
 
     private Stock documentToStock(Document doc) {
+        System.out.println("doc: " + doc.toJson());
+
+        Object lastPriceObj = doc.get("lastPrice");
+        String lastPriceStr;
+        if (lastPriceObj instanceof String) {
+            lastPriceStr = (String) lastPriceObj;
+        } else if (lastPriceObj instanceof org.bson.types.Decimal128) {
+            lastPriceStr = ((org.bson.types.Decimal128) lastPriceObj).bigDecimalValue().toString();
+        } else {
+            lastPriceStr = lastPriceObj.toString();
+        }
+        System.out.println("lastPrice: " + lastPriceStr);
+
         return new Stock(
                 doc.getString("stockName"),
                 doc.getString("stockTicker"),
                 doc.getString("market"),
                 doc.getString("industry"),
                 doc.getString("sector"),
-                new BigDecimal(doc.getString("lastPrice")),
+                new BigDecimal(lastPriceStr),
                 LocalDateTime.ofInstant(doc.getDate("lastUpdated").toInstant(), java.time.ZoneId.systemDefault()),
                 doc.getString("country"),
                 doc.getString("currency")
         );
     }
+
 
     @Override
     public Stock findById(String id) {

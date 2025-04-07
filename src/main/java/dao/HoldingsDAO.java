@@ -71,4 +71,12 @@ public class HoldingsDAO implements GenericDAO<Holdings>{
     }
 
 
+    public List<Holdings> findByWalletId(String walletId) {
+        List<Holdings> result = new ArrayList<>();
+        for (Document doc : collection.find(new Document("walletId", walletId))) {
+            result.add(documentToHoldings(doc));
+        }
+        return result;
+    }
+
 }

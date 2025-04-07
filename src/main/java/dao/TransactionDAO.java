@@ -82,4 +82,13 @@ public class TransactionDAO implements GenericDAO<Transaction> {
         collection.deleteOne(new Document("_id", id));
 
     }
+
+    public List<Transaction> findByWalletId(String walletId) {
+        List<Transaction> result = new ArrayList<>();
+        for (Document doc : collection.find(new Document("walletId", walletId))) {
+            result.add(documentToTransaction(doc));
+        }
+        return result;
+    }
+
 }
