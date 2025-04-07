@@ -76,7 +76,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n  \"investorId\": \"e96228bf-3cd5-4576-8db4-0107fbe594f2\",\r\n  \"stockTicker\": \"AAPL\",\r\n  \"quantity\": 10\r\n}",
+					"raw": "{\r\n  \"investorId\": \"e96228bf-3cd5-4576-8db4-0107fbe594f2\",\r\n  \"stockTicker\": \"DIA\",\r\n  \"quantity\": 1\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -115,6 +115,57 @@
 					"port": "8000",
 					"path": [
 						"investors"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "get asset ",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8000/assets",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"assets"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "list transaction investor",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8000/investors/transactions?investorId=e96228bf-3cd5-4576-8db4-0107fbe594f2",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"investors",
+						"transactions"
+					],
+					"query": [
+						{
+							"key": "investorId",
+							"value": "e96228bf-3cd5-4576-8db4-0107fbe594f2"
+						}
 					]
 				}
 			},
