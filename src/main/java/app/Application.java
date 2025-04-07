@@ -1,7 +1,9 @@
 package app;
 
+import java.io.IOException;
 import java.util.List;
 
+import Routes.RestApiServer;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoDatabase;
@@ -36,6 +38,16 @@ public class Application {
         
         // L'application continue de tourner...
         System.out.println("Application démarrée, la récupération périodique des indices boursiers est active.");
+
+        try {
+            RestApiServer apiServer = new RestApiServer(mongoConnectionString, dbName, 8000);
+            new Thread(apiServer::start).start();
+
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+
 
         // Make sure the main thread doesn't exit
         try {
