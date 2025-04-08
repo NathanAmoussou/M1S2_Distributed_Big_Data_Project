@@ -13,7 +13,7 @@ public class RedisClient {
                 .build();
 
         try {
-            UnifiedJedis jedis = new UnifiedJedis(
+            this.jedis = new UnifiedJedis(
                     new HostAndPort("redis-13268.c339.eu-west-3-1.ec2.redns.redis-cloud.com", 13268),
                     config
             );
