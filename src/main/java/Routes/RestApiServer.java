@@ -274,7 +274,8 @@ public class RestApiServer {
             }
             responseJson.put("transactions", arr);
             if(AppConfig.isEnabled()){
-                RedisCacheService.setCache("transactions:wallet:" + investorId, arr.toString(), 300);
+                RedisCacheService.setCache("transactions:wallet:" + investorId, arr.toString(), AppConfig.CACHE_TTL);
+                System.out.println("Transactions mises en cache.");
             }
             sendResponse(exchange, 200, responseJson.toString());
         }
