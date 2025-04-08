@@ -1,10 +1,13 @@
 package service;
 
 import com.mongodb.client.MongoDatabase;
+import config.AppConfig;
 import dao.InvestorDAO;
 import dao.WalletDAO;
 import model.Investor;
 import model.Wallet;
+import org.json.JSONObject;
+import util.RedisCacheService;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -45,12 +48,35 @@ public class InvestorService {
         wallet.setWalletTypeId("default");
 
         walletDAO.save(wallet);
+        if(AppConfig.isEnabled()){
+            RedisCacheService.setCache("investor:" + investor.getInvestorId(), RedisCacheService.investorToJson(investor).toString(), AppConfig.CACHE_TTL);
+        }
 
         return investor;
     }
 
     public Investor getInvestor(String investorId) {
-        return investorDAO.findById(investorId);
+        try {
+            if(AppConfig.isEnabled()){
+                String cachedInvestor = RedisCacheService.getCache("investor:" + investorId);
+                if(cachedInvestor != null) {
+                    JSONObject json = new JSONObject(cachedInvestor);
+                    Investor cached = RedisCacheService.jsonToInvestor(json);
+                    System.out.println("Investisseur récupéré depuis le cache.");
+                    return cached;
+                }
+            }
+            Investor investor = investorDAO.findById(investorId);
+            if (investor != null && AppConfig.isEnabled()){
+                RedisCacheService.setCache("investor:" + investorId, RedisCacheService.investorToJson(investor).toString(), AppConfig.CACHE_TTL);
+            }
+            return investor;
+        } catch(Exception e) {
+            System.err.println("Erreur lors de la lecture de l'investisseur: " + e.getMessage());
+            e.printStackTrace();
+            return null;
+        }
+
     }
 
     public List<Investor> getAllInvestors() {
@@ -73,6 +99,9 @@ public class InvestorService {
     public Investor updateInvestor(Investor investor) {
         investor.setLastUpdateDate(LocalDateTime.now());
         investorDAO.update(investor);
+        if(AppConfig.isEnabled()){
+            RedisCacheService.setCache("investor:" + investor.getInvestorId(), RedisCacheService.investorToJson(investor).toString(), AppConfig.CACHE_TTL);
+        }
         return investor;
     }
 }

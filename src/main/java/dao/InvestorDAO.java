@@ -43,7 +43,7 @@ public class InvestorDAO implements GenericDAO<Investor> {
     public List<Investor> findAll() {
         List<Investor> result = new ArrayList<>();
         for (Document doc : collection.find()) {
-            System.out.println(doc.toJson());
+            //System.out.println(doc.toJson());
             result.add(documentToInvestor(doc));
         }
         return result;

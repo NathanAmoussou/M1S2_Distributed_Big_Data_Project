@@ -1,5 +1,6 @@
 package util;
 
+import model.Investor;
 import model.Stock;
 import org.json.JSONObject;
 import redis.clients.jedis.UnifiedJedis;
@@ -67,5 +68,33 @@ public class RedisCacheService {
                 json.getString("country"),
                 json.getString("currency")
         );
+    }
+
+    public static JSONObject investorToJson(Investor investor) {
+        JSONObject json = new JSONObject();
+        json.put("investorId", investor.getInvestorId());
+        json.put("username", investor.getUsername());
+        json.put("name", investor.getName());
+        json.put("surname", investor.getSurname());
+        json.put("email", investor.getEmail());
+        json.put("phoneNumber", investor.getPhoneNumber());
+        json.put("addressId", investor.getAddressId());
+        json.put("creationDate", investor.getCreationDate().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+        json.put("lastUpdateDate", investor.getLastUpdateDate().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+        return json;
+    }
+
+    public static Investor jsonToInvestor(JSONObject json) {
+        Investor investor = new Investor();
+        investor.setInvestorId(json.getString("investorId"));
+        investor.setUsername(json.getString("username"));
+        investor.setName(json.getString("name"));
+        investor.setSurname(json.getString("surname"));
+        investor.setEmail(json.getString("email"));
+        investor.setPhoneNumber(json.getString("phoneNumber"));
+        investor.setAddressId(json.getString("addressId"));
+        investor.setCreationDate(LocalDateTime.parse(json.getString("creationDate"), DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+        investor.setLastUpdateDate(LocalDateTime.parse(json.getString("lastUpdateDate"), DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+        return investor;
     }
 }
