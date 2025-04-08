@@ -6,6 +6,7 @@ import com.mongodb.client.MongoDatabase;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import config.AppConfig;
 import dao.HoldingsDAO;
 import dao.StockDAO;
 import dao.TransactionDAO;
@@ -14,6 +15,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import service.InvestmentService;
 import service.InvestorService;
+import util.RedisCacheService;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -245,6 +247,17 @@ public class RestApiServer {
                 sendResponse(exchange, 400, responseJson.toString());
                 return;
             }
+
+            if(AppConfig.isEnabled()){
+                String cachedTransactions = RedisCacheService.getCache("transactions:wallet:" + investorId);
+                if(cachedTransactions != null) {
+                    responseJson.put("transactions", new JSONArray(cachedTransactions));
+                    sendResponse(exchange, 200, responseJson.toString());
+                    System.out.println("Transactions récupérées depuis le cache.");
+                    return;
+                }
+            }
+
             TransactionDAO transactionDAO = new TransactionDAO(database.getCollection("transactions"));
             List<Transaction> transactions = transactionDAO.findByWalletId(investorId);
             JSONArray arr = new JSONArray();
@@ -260,6 +273,9 @@ public class RestApiServer {
                 arr.put(obj);
             }
             responseJson.put("transactions", arr);
+            if(AppConfig.isEnabled()){
+                RedisCacheService.setCache("transactions:wallet:" + investorId, arr.toString(), 300);
+            }
             sendResponse(exchange, 200, responseJson.toString());
         }
     }

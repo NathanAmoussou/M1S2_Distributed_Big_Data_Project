@@ -2,6 +2,8 @@ package util;
 
 import model.Investor;
 import model.Stock;
+import model.Transaction;
+import model.Wallet;
 import org.json.JSONObject;
 import redis.clients.jedis.UnifiedJedis;
 
@@ -97,4 +99,24 @@ public class RedisCacheService {
         investor.setLastUpdateDate(LocalDateTime.parse(json.getString("lastUpdateDate"), DateTimeFormatter.ISO_LOCAL_DATE_TIME));
         return investor;
     }
+
+    public static JSONObject walletToJson(Wallet wallet) {
+        JSONObject json = new JSONObject();
+        json.put("walletId", wallet.getWalletId());
+        json.put("balance", wallet.getBalance().toString());
+        json.put("currencyCode", wallet.getCurrencyCode());
+        return json;
+    }
+    public static JSONObject transactionToJson(Transaction transaction) {
+        JSONObject json = new JSONObject();
+        json.put("transactionId", transaction.getTransactionId());
+        json.put("stockId", transaction.getStockId());
+        json.put("quantity", transaction.getQuantity());
+        json.put("priceAtTransaction", transaction.getPriceAtTransaction().toString());
+        json.put("transactionType", transaction.getTransactionTypesId());
+        json.put("transactionStatus", transaction.getTransactionStatusId());
+        json.put("createdAt", transaction.getCreatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+        return json;
+    }
+
 }

@@ -1,6 +1,7 @@
 package service;
 
 import com.mongodb.client.MongoDatabase;
+import config.AppConfig;
 import dao.HoldingsDAO;
 import dao.StockDAO;
 import dao.TransactionDAO;
@@ -9,6 +10,8 @@ import model.Holdings;
 import model.Stock;
 import model.Transaction;
 import model.Wallet;
+import org.json.JSONArray;
+import util.RedisCacheService;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -96,8 +99,10 @@ public class InvestmentService {
             holdingsDAO.update(holding);
         }
 
+        updateTransactionCache(wallet, transaction);
         return transaction;
     }
+
 
     /**
      * Permet à un investisseur de vendre une quantité d’un actif.
@@ -159,6 +164,25 @@ public class InvestmentService {
         transaction.setUpdatedAt(LocalDateTime.now());
         transactionDAO.save(transaction);
 
+
+        updateTransactionCache(wallet, transaction);
         return transaction;
+
     }
+
+    //TODO l'IDE  a fait se truc bizarre pour eviter la duplication de code
+    private void updateTransactionCache(Wallet wallet, Transaction transaction) {
+        if (AppConfig.isEnabled()) {
+            RedisCacheService.setCache("wallet:" + wallet.getWalletId(), RedisCacheService.walletToJson(wallet).toString(), AppConfig.CACHE_TTL);
+            List<Transaction> transactions = transactionDAO.findByWalletId(wallet.getWalletId());
+            JSONArray arr = new JSONArray();
+            for (Transaction transactionTemp : transactions) {
+                RedisCacheService.transactionToJson(transactionTemp);
+            }
+            RedisCacheService.setCache("transactions:wallet:" + wallet.getWalletId(), arr.toString(), AppConfig.CACHE_TTL);
+        }
+
+    }
+
+
 }
