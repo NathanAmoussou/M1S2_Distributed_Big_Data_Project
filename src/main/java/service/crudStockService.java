@@ -2,8 +2,10 @@ package service;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
+import config.AppConfig;
 import dao.StockPriceHistoryDAO;
 import model.StockPriceHistory;
 import org.json.JSONArray;
@@ -15,6 +17,7 @@ import com.mongodb.client.MongoDatabase;
 
 import dao.StockDAO;
 import model.Stock;
+import util.RedisCacheService;
 
 public class crudStockService {
     private final StockDAO stockDAO;
@@ -46,6 +49,7 @@ public class crudStockService {
      * @return The created Stock object or null if creation fails
      */
     public Stock createStock(String stockTicker, String market) {
+
         String dbStockTicker = market != null && !market.isEmpty() ? stockTicker + "." + market : stockTicker;
         try {
             // First check if the stock already exists
@@ -78,7 +82,12 @@ public class crudStockService {
             // Save to database
             stockDAO.save(stock);
             System.out.println("Created stock: " + stock);
-            
+
+            if (AppConfig.isEnabled()) {
+                RedisCacheService.setCache("stock:" + dbStockTicker, RedisCacheService.stockToJson(stock).toString(), AppConfig.CACHE_TTL);
+            }
+
+
             // Now fetch historical data from 2018 to current year in yearly chunks
             fetchHistoricalData(stockTicker, market, dbStockTicker);
             
@@ -213,9 +222,25 @@ public class crudStockService {
      */
     public Stock readStock(String stockTicker) {
         try {
+            if (AppConfig.isEnabled()) {
+                String cachedStockJson = RedisCacheService.getCache("stock:" + stockTicker);
+                if (cachedStockJson != null) {
+                    JSONObject json = new JSONObject(cachedStockJson);
+                    Stock cachedStock = RedisCacheService.jsonToStock(json);
+                    System.out.println("Stock récupéré depuis le cache: " + cachedStock);
+                    return cachedStock;
+                }
+            }
+
             Stock stock = stockDAO.findByStockTicker(stockTicker);
             if (stock == null) {
                 System.out.println("Stock with ticker " + stockTicker + " not found");
+                return null;
+            }
+
+            // Mettre en cache le stock lu
+            if (AppConfig.isEnabled()) {
+                RedisCacheService.setCache("stock:" + stockTicker, RedisCacheService.stockToJson(stock).toString(), AppConfig.CACHE_TTL);
             }
             return stock;
         } catch (Exception e) {
@@ -230,7 +255,38 @@ public class crudStockService {
      * @return List of all Stock objects
      */
     public List<Stock> getAllStocks() {
-        return stockDAO.findAll();
+        try {
+            if (AppConfig.isEnabled()) {
+                String cachedStocks = RedisCacheService.getCache("stocks:all");
+                if (cachedStocks != null) {
+                    JSONArray arr = new JSONArray(cachedStocks);
+                    List<Stock> stocks = new ArrayList<>();
+
+                    for (int i = 0; i < arr.length(); i++) {
+                        stocks.add(RedisCacheService.jsonToStock(arr.getJSONObject(i)));
+                    }
+                    System.out.println("Liste des stocks récupérée depuis le cache.");
+                    return stocks;
+                }
+            }
+
+            List<Stock> stocks = stockDAO.findAll();
+
+            // On met en cache la liste des stocks
+            if (AppConfig.isEnabled() && stocks != null) {
+                JSONArray arr = new JSONArray();
+                for (Stock s : stocks) {
+                    arr.put(RedisCacheService.stockToJson(s));
+                }
+                RedisCacheService.setCache("stocks:all", arr.toString(), AppConfig.CACHE_TTL);
+            }
+
+            return stocks;
+        } catch (Exception e) {
+            System.err.println("Error getting all stocks: " + e.getMessage());
+            e.printStackTrace();
+            return null;
+        }
     }
 
     /**
@@ -271,6 +327,12 @@ public class crudStockService {
             // Update in database
             stockDAO.update(existingStock);
             System.out.println("Updated stock: " + existingStock);
+
+            if (AppConfig.isEnabled()) {
+                RedisCacheService.setCache("stock:" + dbStockTicker, RedisCacheService.stockToJson(existingStock).toString(), AppConfig.CACHE_TTL);
+            }
+
+
             return existingStock;
         } catch (Exception e) {
             System.err.println("Error updating stock: " + e.getMessage());
@@ -294,6 +356,10 @@ public class crudStockService {
 
             stockDAO.deleteByStockTicker(stockTicker);
             System.out.println("Deleted stock with ticker: " + stockTicker);
+
+            if (AppConfig.isEnabled()) {
+                RedisCacheService.deleteCache("stock:" + stockTicker);
+            }
             return true;
         } catch (Exception e) {
             System.err.println("Error deleting stock: " + e.getMessage());
@@ -318,6 +384,11 @@ public class crudStockService {
             stock.setLastUpdated(LocalDateTime.now());
             stockDAO.update(stock);
             System.out.println("Manually updated stock: " + stock);
+
+            if (AppConfig.isEnabled()) {
+                RedisCacheService.setCache("stock:" + stock.getStockTicker(), RedisCacheService.stockToJson(existingStock).toString(), AppConfig.CACHE_TTL);
+            }
+
             return stock;
         } catch (Exception e) {
             System.err.println("Error manually updating stock: " + e.getMessage());
@@ -334,4 +405,6 @@ public class crudStockService {
             mongoClient.close();
         }
     }
+
+
 }

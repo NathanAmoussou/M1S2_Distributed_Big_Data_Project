@@ -16,6 +16,19 @@ import service.crudStockService;
 
 public class Application {
     public static void main(String[] args) {
+
+        boolean enableCache = false;
+        for (String arg : args) {
+            if (arg.equalsIgnoreCase("--enableRedisCache")) {
+                enableCache = true;
+                break;
+            }
+        }
+        config.AppConfig.setEnabled(enableCache);
+        System.out.println("Mise en cache Redis : " + config.AppConfig.isEnabled());
+
+
+
         // MongoDB connection string
         String mongoConnectionString = "mongodb://localhost:27017";
         String dbName = "gestionBourse";
