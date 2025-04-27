@@ -1,29 +1,48 @@
 package model;
 
-public class Address {
-    private String addressId;
-    private String street;
-    private String postalCode;
-    private String city;
+import org.bson.types.ObjectId;
+import org.json.JSONObject;
 
+public class Address {
+    private ObjectId addressId;
+    private String street;
+    private String zipCode;
+    private String city;
     private String countryId;
 
     public Address() {
     }
 
     public Address(String addressId, String street, String postalCode, String city, String countryId) {
-        this.addressId = addressId;
+        this.addressId = new ObjectId(addressId); //.toHexString();
         this.street = street;
-        this.postalCode = postalCode;
+        this.zipCode = postalCode;
         this.city = city;
         this.countryId = countryId;
     }
 
-    public String getAddressId() {
+    // json constructor
+    public Address(JSONObject json) {
+        System.out.println("DEBUG : " + json.toString());
+        Object addressIdObj = json.opt("addressId");
+        if (addressIdObj instanceof ObjectId) {
+            this.addressId = (ObjectId) addressIdObj;
+        } else if (addressIdObj instanceof String) {
+            this.addressId = new ObjectId((String) addressIdObj);
+        } else {
+            this.addressId = new ObjectId();
+        }
+        this.street = json.getString("street");
+        this.zipCode = json.getString("zipCode");
+        this.city = json.getString("city");
+        this.countryId = json.getString("country");
+    }
+
+    public ObjectId getAddressId() {
         return addressId;
     }
 
-    public void setAddressId(String addressId) {
+    public void setAddressId(ObjectId addressId) {
         this.addressId = addressId;
     }
 
@@ -35,12 +54,12 @@ public class Address {
         this.street = street;
     }
 
-    public String getPostalCode() {
-        return postalCode;
+    public String getZipCode() {
+        return zipCode;
     }
 
-    public void setPostalCode(String postalCode) {
-        this.postalCode = postalCode;
+    public void setZipCode(String zipCode) {
+        this.zipCode = zipCode;
     }
 
     public String getCity() {
@@ -61,12 +80,34 @@ public class Address {
 
     @Override
     public String toString() {
-        return "Address{" +
-                "addressId='" + addressId + '\'' +
-                ", street='" + street + '\'' +
-                ", postalCode='" + postalCode + '\'' +
-                ", city='" + city + '\'' +
-                ", countryId='" + countryId + '\'' +
-                '}';
+       JSONObject json = this.toJSON();
+        return json.toString();
+    }
+
+    public JSONObject toJSON() {
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("addressId", addressId);
+        jsonObject.put("street", street);
+        jsonObject.put("zipCode", zipCode);
+        jsonObject.put("city", city);
+        jsonObject.put("country", countryId);
+        return jsonObject;
+    }
+
+    public static Address fromJSON(JSONObject jsonObject) {
+        Address address = new Address();
+        Object addressIdObj = jsonObject.opt("addressId");
+        if (addressIdObj instanceof ObjectId) {
+            address.setAddressId((ObjectId) addressIdObj);
+        } else if (addressIdObj instanceof String) {
+            address.setAddressId(new ObjectId((String) addressIdObj));
+        } else {
+            address.setAddressId(new ObjectId());
+        }
+        address.setStreet(jsonObject.getString("street"));
+        address.setZipCode(jsonObject.getString("zipCode"));
+        address.setCity(jsonObject.getString("city"));
+        address.setCountryId(jsonObject.getString("country"));
+        return address;
     }
 }

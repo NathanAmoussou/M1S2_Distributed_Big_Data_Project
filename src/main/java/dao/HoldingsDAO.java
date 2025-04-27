@@ -3,6 +3,7 @@ package dao;
 import com.mongodb.client.MongoCollection;
 import org.bson.Document;
 import model.Holdings;
+import org.bson.types.ObjectId;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -65,13 +66,13 @@ public class HoldingsDAO implements GenericDAO<Holdings>{
         holdings.setStockId(doc.getString("stockId"));
         holdings.setQuantity(doc.getInteger("quantity"));
         holdings.setAveragePurchasePrice(new BigDecimal(doc.getString("averagePurchasePrice")));
-        holdings.setWalletId(doc.getString("walletId"));
+        holdings.setWalletId(new ObjectId(doc.getString("walletId")));
         return holdings;
 
     }
 
 
-    public List<Holdings> findByWalletId(String walletId) {
+    public List<Holdings> findByWalletId(ObjectId walletId) {
         List<Holdings> result = new ArrayList<>();
         for (Document doc : collection.find(new Document("walletId", walletId))) {
             result.add(documentToHoldings(doc));

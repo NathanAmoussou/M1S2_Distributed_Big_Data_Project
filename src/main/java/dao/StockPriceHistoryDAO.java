@@ -11,6 +11,7 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 
 import model.StockPriceHistory;
+import org.bson.types.Decimal128;
 
 public class StockPriceHistoryDAO implements GenericDAO<StockPriceHistory> {
     private final MongoCollection<Document> collection;
@@ -141,14 +142,22 @@ public class StockPriceHistoryDAO implements GenericDAO<StockPriceHistory> {
     }
 
     private BigDecimal safeGetBigDecimal(Document doc, String fieldName) {
-        String val = doc.getString(fieldName);
-        if (val == null || val.isEmpty()) {
-            return new BigDecimal("0.0");
+        Object value = doc.get(fieldName);
+        if (value == null) {
+            return BigDecimal.ZERO;
         }
-        try {
-            return new BigDecimal(val);
-        } catch (NumberFormatException e) {
-            return new BigDecimal("0.0");
+        if (value instanceof Decimal128) {
+            return ((Decimal128) value).bigDecimalValue();
+        } else if (value instanceof Number) {
+            return new BigDecimal(((Number) value).toString());
+        } else if (value instanceof String) {
+            try {
+                return new BigDecimal((String) value);
+            } catch (NumberFormatException e) {
+                return BigDecimal.ZERO;
+            }
         }
+        return BigDecimal.ZERO;
     }
+
 }

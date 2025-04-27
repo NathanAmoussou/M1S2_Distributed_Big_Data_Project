@@ -170,18 +170,20 @@ public class InvestmentService {
 
     }
 
-    //TODO l'IDE  a fait se truc bizarre pour eviter la duplication de code
     private void updateTransactionCache(Wallet wallet, Transaction transaction) {
         if (AppConfig.isEnabled()) {
-            RedisCacheService.setCache("wallet:" + wallet.getWalletId(), RedisCacheService.walletToJson(wallet).toString(), AppConfig.CACHE_TTL);
+            RedisCacheService.setCache(
+                    "wallet:" + wallet.getWalletId(),
+                    wallet.toString(),
+                    AppConfig.CACHE_TTL
+            );
             List<Transaction> transactions = transactionDAO.findByWalletId(wallet.getWalletId());
             JSONArray arr = new JSONArray();
             for (Transaction transactionTemp : transactions) {
-                RedisCacheService.transactionToJson(transactionTemp);
+                arr.put(transactionTemp.toString());
             }
             RedisCacheService.setCache("transactions:wallet:" + wallet.getWalletId(), arr.toString(), AppConfig.CACHE_TTL);
         }
-
     }
 
 

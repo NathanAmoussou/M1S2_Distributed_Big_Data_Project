@@ -84,7 +84,11 @@ public class crudStockService {
             System.out.println("Created stock: " + stock);
 
             if (AppConfig.isEnabled()) {
-                RedisCacheService.setCache("stock:" + dbStockTicker, RedisCacheService.stockToJson(stock).toString(), AppConfig.CACHE_TTL);
+                RedisCacheService.setCache(
+                        "stock:" + dbStockTicker,
+                        stock.toString(),
+                        AppConfig.CACHE_TTL
+                );
             }
 
 
@@ -226,7 +230,7 @@ public class crudStockService {
                 String cachedStockJson = RedisCacheService.getCache("stock:" + stockTicker);
                 if (cachedStockJson != null) {
                     JSONObject json = new JSONObject(cachedStockJson);
-                    Stock cachedStock = RedisCacheService.jsonToStock(json);
+                    Stock cachedStock = new Stock(json);
                     System.out.println("Stock récupéré depuis le cache: " + cachedStock);
                     return cachedStock;
                 }
@@ -240,7 +244,11 @@ public class crudStockService {
 
             // Mettre en cache le stock lu
             if (AppConfig.isEnabled()) {
-                RedisCacheService.setCache("stock:" + stockTicker, RedisCacheService.stockToJson(stock).toString(), AppConfig.CACHE_TTL);
+                RedisCacheService.setCache(
+                        "stock:" + stockTicker,
+                        stock.toString(),
+                        AppConfig.CACHE_TTL
+                );
             }
             return stock;
         } catch (Exception e) {
@@ -263,7 +271,7 @@ public class crudStockService {
                     List<Stock> stocks = new ArrayList<>();
 
                     for (int i = 0; i < arr.length(); i++) {
-                        stocks.add(RedisCacheService.jsonToStock(arr.getJSONObject(i)));
+                        stocks.add(new Stock(arr.getJSONObject(i)));
                     }
                     System.out.println("Liste des stocks récupérée depuis le cache.");
                     return stocks;
@@ -276,7 +284,7 @@ public class crudStockService {
             if (AppConfig.isEnabled() && stocks != null) {
                 JSONArray arr = new JSONArray();
                 for (Stock s : stocks) {
-                    arr.put(RedisCacheService.stockToJson(s));
+                    arr.put(s.toString());
                 }
                 RedisCacheService.setCache("stocks:all", arr.toString(), AppConfig.CACHE_TTL);
             }
@@ -329,7 +337,11 @@ public class crudStockService {
             System.out.println("Updated stock: " + existingStock);
 
             if (AppConfig.isEnabled()) {
-                RedisCacheService.setCache("stock:" + dbStockTicker, RedisCacheService.stockToJson(existingStock).toString(), AppConfig.CACHE_TTL);
+                RedisCacheService.setCache(
+                        "stock:" + dbStockTicker,
+                        existingStock.toString(),
+                        AppConfig.CACHE_TTL
+                );
             }
 
 
@@ -386,7 +398,11 @@ public class crudStockService {
             System.out.println("Manually updated stock: " + stock);
 
             if (AppConfig.isEnabled()) {
-                RedisCacheService.setCache("stock:" + stock.getStockTicker(), RedisCacheService.stockToJson(existingStock).toString(), AppConfig.CACHE_TTL);
+                RedisCacheService.setCache(
+                        "stock:" + stock.getStockTicker(),
+                        existingStock.toString(),
+                        AppConfig.CACHE_TTL
+                );
             }
 
             return stock;

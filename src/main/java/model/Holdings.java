@@ -1,10 +1,12 @@
 package model;
 
+import org.bson.types.ObjectId;
+
 import java.math.BigDecimal;
 
 public class Holdings {
     private String holdingsId;
-    private String walletId;
+    private ObjectId walletId;
     private String stockId;
 
     private int quantity;
@@ -13,7 +15,7 @@ public class Holdings {
     public Holdings() {
     }
 
-    public Holdings(String holdingsId, String walletId, String stockId, int quantity, BigDecimal averagePurchasePrice) {
+    public Holdings(String holdingsId, ObjectId walletId, String stockId, int quantity, BigDecimal averagePurchasePrice) {
         this.holdingsId = holdingsId;
         this.walletId = walletId;
         this.stockId = stockId;
@@ -29,11 +31,11 @@ public class Holdings {
         this.holdingsId = holdingsId;
     }
 
-    public String getWalletId() {
+    public ObjectId getWalletId() {
         return walletId;
     }
 
-    public void setWalletId(String walletId) {
+    public void setWalletId(ObjectId walletId) {
         this.walletId = walletId;
     }
 

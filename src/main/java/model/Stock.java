@@ -1,5 +1,8 @@
 package model;
 
+import com.google.gson.JsonObject;
+import org.json.JSONObject;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
@@ -15,9 +18,6 @@ public class Stock {
     private String country; // ex "United States"
     private String currency; // ex "USD"
 
-
-    public Stock() {
-    }
 
     public Stock(
             String stockName,
@@ -39,6 +39,19 @@ public class Stock {
         this.lastUpdated = lastUpdated;
         this.country = country;
         this.currency = currency;
+    }
+
+    // Constructor for JSON
+    public Stock(JSONObject json) {
+        this.stockName = json.getString("stockName");
+        this.stockTicker = json.getString("stockTicker");
+        this.market = json.getString("market");
+        this.industry = json.getString("industry");
+        this.sector = json.getString("sector");
+        this.lastPrice = new BigDecimal(json.getString("lastPrice"));
+        this.lastUpdated = LocalDateTime.parse(json.getString("lastUpdated"));
+        this.country = json.getString("country");
+        this.currency = json.getString("currency");
     }
 
     public String getStockTicker() {
@@ -112,15 +125,35 @@ public class Stock {
 
     @Override
     public String toString() {
-        return "Stock{" +
-                "stockName='" + stockName + '\'' +
-                ", stockTicker='" + stockTicker + '\'' +
-                ", market='" + market + '\'' +
-                ", sector='" + sector + '\'' +
-                ", lastPrice=" + lastPrice +
-                ", lastUpdated=" + lastUpdated +
-                ", country='" + country + '\'' +
-                ", currency='" + currency + '\'' +
-                '}';
+        JSONObject json = this.toJson();
+        return json.toString();
+    }
+
+    public JSONObject toJson() {
+        JSONObject json = new JSONObject();
+        json.put("stockName", stockName);
+        json.put("stockTicker", stockTicker);
+        json.put("market", market);
+        json.put("industry", industry);
+        json.put("sector", sector);
+        json.put("lastPrice", lastPrice.toString());
+        json.put("lastUpdated", lastUpdated.toString());
+        json.put("country", country);
+        json.put("currency", currency);
+        return json;
+    }
+
+    public static Stock fromJson(JSONObject json) {
+        return new Stock(
+                json.getString("stockName"),
+                json.getString("stockTicker"),
+                json.getString("market"),
+                json.getString("industry"),
+                json.getString("sector"),
+                new BigDecimal(json.getString("lastPrice")),
+                LocalDateTime.parse(json.getString("lastUpdated")),
+                json.getString("country"),
+                json.getString("currency")
+        );
     }
 }

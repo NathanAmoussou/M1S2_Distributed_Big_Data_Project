@@ -3,6 +3,7 @@ package dao;
 import com.mongodb.client.MongoCollection;
 import org.bson.Document;
 import model.Transaction;
+import org.bson.types.ObjectId;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -32,7 +33,7 @@ public class TransactionDAO implements GenericDAO<Transaction> {
         transaction.setCreatedAt(LocalDateTime.ofInstant(doc.getDate("createdAt").toInstant(), java.time.ZoneId.systemDefault()));
         transaction.setUpdatedAt(LocalDateTime.ofInstant(doc.getDate("updatedAt").toInstant(), java.time.ZoneId.systemDefault()));
         transaction.setStockId(doc.getString("stockId"));
-        transaction.setWalletId(doc.getString("walletId"));
+        transaction.setWalletId(new ObjectId(doc.getString("walletId")));
 
         return transaction;
     }
@@ -83,7 +84,7 @@ public class TransactionDAO implements GenericDAO<Transaction> {
 
     }
 
-    public List<Transaction> findByWalletId(String walletId) {
+    public List<Transaction> findByWalletId(ObjectId walletId) {
         List<Transaction> result = new ArrayList<>();
         for (Document doc : collection.find(new Document("walletId", walletId))) {
             result.add(documentToTransaction(doc));

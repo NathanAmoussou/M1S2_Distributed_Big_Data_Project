@@ -1,5 +1,8 @@
 package model;
 
+import com.google.gson.JsonObject;
+import org.json.JSONObject;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
@@ -38,6 +41,19 @@ public class StockPriceHistory {
         this.volume = volume;
         this.dividend = dividend;
         this.stockSplit = stockSplit;
+    }
+
+    // Constructor for JSON
+    public StockPriceHistory(JSONObject json) {
+        this.stockPriceHistoryTicker = json.getString("stockPriceHistoryTicker");
+        this.dateTime = LocalDateTime.parse(json.getString("dateTime"));
+        this.openPrice = new BigDecimal(json.getString("openPrice"));
+        this.closePrice = new BigDecimal(json.getString("closePrice"));
+        this.highPrice = new BigDecimal(json.getString("highPrice"));
+        this.lowPrice = new BigDecimal(json.getString("lowPrice"));
+        this.volume = new BigDecimal(json.getString("volume"));
+        this.dividend = new BigDecimal(json.getString("dividend"));
+        this.stockSplit = new BigDecimal(json.getString("stockSplit"));
     }
 
     public String getStockPriceHistoryTicker() {
@@ -110,16 +126,35 @@ public class StockPriceHistory {
 
     @Override
     public String toString() {
-        return "StockPriceHistory{" +
-                "stockPriceHistoryTicker='" + stockPriceHistoryTicker + '\'' +
-                ", dateTime=" + dateTime +
-                ", openPrice=" + openPrice +
-                ", closePrice=" + closePrice +
-                ", highPrice=" + highPrice +
-                ", lowPrice=" + lowPrice +
-                ", volume=" + volume +
-                ", dividend=" + dividend +
-                ", stockSplit=" + stockSplit +
-                '}';
+        JSONObject json = this.toJson();
+        return json.toString();
+    }
+
+    public JSONObject toJson() {
+        JSONObject json = new JSONObject();
+        json.put("stockPriceHistoryTicker", stockPriceHistoryTicker);
+        json.put("dateTime", dateTime.toString());
+        json.put("openPrice", openPrice.toString());
+        json.put("closePrice", closePrice.toString());
+        json.put("highPrice", highPrice.toString());
+        json.put("lowPrice", lowPrice.toString());
+        json.put("volume", volume.toString());
+        json.put("dividend", dividend.toString());
+        json.put("stockSplit", stockSplit.toString());
+        return json;
+    }
+
+    public static StockPriceHistory fromJson(JSONObject json) {
+        return new StockPriceHistory(
+                json.getString("stockPriceHistoryTicker"),
+                LocalDateTime.parse(json.getString("dateTime")),
+                new BigDecimal(json.getString("openPrice")),
+                new BigDecimal(json.getString("closePrice")),
+                new BigDecimal(json.getString("highPrice")),
+                new BigDecimal(json.getString("lowPrice")),
+                new BigDecimal(json.getString("volume")),
+                new BigDecimal(json.getString("dividend")),
+                new BigDecimal(json.getString("stockSplit"))
+        );
     }
 }
