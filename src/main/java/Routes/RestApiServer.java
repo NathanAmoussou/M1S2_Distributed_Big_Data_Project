@@ -1,35 +1,18 @@
 package Routes;
 
+//import Routes.Handlers.InvestHandler;
 import Routes.Handlers.InvestHandler;
 import Routes.Handlers.InvestorsHandler;
+import Routes.Handlers.WalletAddFundsHandler;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoDatabase;
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
-import config.AppConfig;
-import dao.HoldingsDAO;
-import dao.StockDAO;
-import dao.TransactionDAO;
-import model.*;
-import org.bson.types.ObjectId;
-import org.json.JSONArray;
-import org.json.JSONObject;
 import service.InvestmentService;
 import service.InvestorService;
-import util.RedisCacheService;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.math.BigDecimal;
 import java.net.InetSocketAddress;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.Map;
-import java.util.HashMap;
 
 public class RestApiServer {
     private final HttpServer server;
@@ -47,18 +30,18 @@ public class RestApiServer {
         server = HttpServer.create(new InetSocketAddress(port), 0);
 
         //(endpoints)
-        server.createContext("/investors", new InvestorsHandler(investorService));
-        server.createContext("/investors/addFunds", new AddFundsHandler());
+        server.createContext("/investors", new InvestorsHandler(investorService)); // GET: OK, POST : OK
+        server.createContext("/wallets/addFunds", new WalletAddFundsHandler(investorService)); // POST: OK
 
-        server.createContext("/investors/invest", new InvestHandler(investmentService));
+         server.createContext("/investors/invest", new InvestHandler(investmentService));
 
-        server.createContext("/investors/holdings", new HoldingsHandler());
-        server.createContext("/investors/transactions", new TransactionsHandler());
-        server.createContext("/assets", new AssetsHandler());
-        server.createContext("/investors/sell", new SellHandler());
-        server.createContext("/assets/transactions", new AssetsTransactionsHandler());
-        server.createContext("/investors/wallet", new WalletHandler());
-        server.createContext("/investors/update", new UpdateInvestorHandler());
+        // server.createContext("/investors/holdings", new HoldingsHandler());
+        // server.createContext("/investors/transactions", new TransactionsHandler());
+        // server.createContext("/assets", new AssetsHandler());
+        // server.createContext("/investors/sell", new SellHandler());
+        // server.createContext("/assets/transactions", new AssetsTransactionsHandler());
+        // server.createContext("/investors/wallet", new WalletHandler());
+        // server.createContext("/investors/update", new UpdateInvestorHandler());
     }
 
     public void start() {

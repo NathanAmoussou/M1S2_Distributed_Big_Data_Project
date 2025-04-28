@@ -1,6 +1,5 @@
 package model;
 
-import com.google.gson.JsonObject;
 import org.bson.types.ObjectId;
 import org.json.JSONObject;
 import util.JsonUtils;
@@ -11,27 +10,27 @@ public class Wallet {
     private ObjectId walletId;
     private String currencyCode;
     private BigDecimal balance; //wesh c est int infini du jamais vu //
-    private String walletTypeId;
+    private String walletType;
 
     public Wallet() {
         this.setWalletId(new ObjectId());
         this.setCurrencyCode("USD");
         this.setBalance(BigDecimal.ZERO);
-        this.setWalletTypeId("default");
+        this.setWalletType("default");
     }
 
-    public Wallet(ObjectId walletId, String currencyCode, BigDecimal balance, String walletTypeId) {
+    public Wallet(ObjectId walletId, String currencyCode, BigDecimal balance, String walletType) {
         this.walletId = walletId; //.toHexString();
         this.currencyCode = currencyCode;
         this.balance = balance;
-        this.walletTypeId = walletTypeId;
+        this.walletType = walletType;
     }
 
     // Constructor for JSON
     public Wallet(JSONObject json) {
         this.walletId = JsonUtils.getObjectId(json, "walletId");
         this.currencyCode = json.getString("currencyCode");
-        this.walletTypeId = json.getString("walletTypeId");
+        this.walletType = json.getString("walletType");
         this.balance = JsonUtils.getBigDecimal(json, "balance");
     }
 
@@ -59,12 +58,12 @@ public class Wallet {
         this.balance = balance;
     }
 
-    public String getWalletTypeId() {
-        return walletTypeId;
+    public String getWalletType() {
+        return walletType;
     }
 
-    public void setWalletTypeId(String walletTypeId) {
-        this.walletTypeId = walletTypeId;
+    public void setWalletType(String walletType) {
+        this.walletType = walletType;
     }
 
     @Override
@@ -76,7 +75,7 @@ public class Wallet {
     public JSONObject toJson() {
         JSONObject json = new JSONObject();
         json.put("walletId", walletId);
-        json.put("walletType", walletTypeId);
+        json.put("walletType", walletType);
         json.put("currencyCode", currencyCode);
         json.put("balance", balance);
         return json;

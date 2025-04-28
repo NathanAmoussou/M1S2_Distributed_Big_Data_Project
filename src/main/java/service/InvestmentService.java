@@ -5,7 +5,7 @@ import config.AppConfig;
 import dao.HoldingsDAO;
 import dao.StockDAO;
 import dao.TransactionDAO;
-import dao.WalletDAO;
+import dao.InvestorDAO;
 import model.Holdings;
 import model.Stock;
 import model.Transaction;
@@ -20,13 +20,13 @@ import java.util.List;
 import java.util.UUID;
 
 public class InvestmentService {
-    private final WalletDAO walletDAO;
+    private final InvestorDAO investorDAO;
     private final StockDAO stockDAO;
     private final TransactionDAO transactionDAO;
     private final HoldingsDAO holdingsDAO;
 
     public InvestmentService(MongoDatabase database) {
-        this.walletDAO = new WalletDAO(database);
+        this.investorDAO = new InvestorDAO(database);
         this.stockDAO = new StockDAO(database);
         this.transactionDAO = new TransactionDAO(database.getCollection("transactions"));
         this.holdingsDAO = new HoldingsDAO(database.getCollection("holdings"));
@@ -36,29 +36,29 @@ public class InvestmentService {
      * Permet à un investisseur d’acheter un actif (ex. action).
      * Vérifie les fonds, déduit le montant, crée une transaction et met à jour le holding.
      */
-    public Transaction investInAsset(String investorId, String stockTicker, int quantity) {
-        Wallet wallet = walletDAO.findById(investorId);
+    public Transaction investInAsset(String walletId, String stockTicker, int quantity) {
+        Wallet wallet = investorDAO.getWalletById(walletId);
         if(wallet == null) {
-            throw new RuntimeException("Portefeuille non trouvé pour l’investisseur : " + investorId);
+            throw new RuntimeException("Wallet not found : " + walletId);
         }
 
         Stock stock = stockDAO.findByStockTicker(stockTicker);
         if(stock == null) {
-            throw new RuntimeException("Action non trouvée : " + stockTicker);
+            throw new RuntimeException("Stock not found : " + stockTicker);
         }
 
         BigDecimal price = stock.getLastPrice();
         BigDecimal totalCost = price.multiply(new BigDecimal(quantity));
 
         if(wallet.getBalance().compareTo(totalCost) < 0) {
-            throw new RuntimeException("Fonds insuffisants. Nécessaire : " + totalCost + ", disponible : " + wallet.getBalance());
+            throw new RuntimeException("Insufficient funds. Necessary : " + totalCost + ", available : " + wallet.getBalance());
         }
 
         wallet.setBalance(wallet.getBalance().subtract(totalCost));
-        walletDAO.update(wallet);
+        investorDAO.updateWallet(wallet);
 
         Transaction transaction = new Transaction();
-        transaction.setTransactionId(UUID.randomUUID().toString());
+//        transaction.setTransactionId(UUID.randomUUID().toString());
         transaction.setPriceAtTransaction(price);
         transaction.setQuantity(quantity);
         transaction.setTransactionTypesId("BUY"); //TODO

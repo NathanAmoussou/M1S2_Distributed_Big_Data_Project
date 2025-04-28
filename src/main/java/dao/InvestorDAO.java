@@ -4,8 +4,10 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.IndexOptions;
 import com.mongodb.client.model.Indexes;
+import model.Wallet;
 import org.bson.Document;
 import model.Investor;
+import org.bson.types.ObjectId;
 import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
@@ -28,7 +30,10 @@ public class InvestorDAO implements GenericDAO<Investor> {
             // Creating an index on "email" to be unique
             collection.createIndex(Indexes.ascending("email"), new IndexOptions().unique(true));
 
-            System.out.println("Unique indexes on 'username' and 'email' created successfully.");
+            // Creating a unique index on each wallet's walletId
+            collection.createIndex(Indexes.ascending("wallets.walletId"), new IndexOptions().unique(true));
+
+            System.out.println("Unique indexes on 'username', 'email', and 'wallets.walletId' created successfully.");
         } catch (Exception e) {
             System.err.println("Error creating indexes: " + e.getMessage());
         }
@@ -84,11 +89,10 @@ public class InvestorDAO implements GenericDAO<Investor> {
     @Override
     public void update(Investor majInvestor) {
        try {
-           // convert the updated investor to JSON string
-           String jsonString = majInvestor.toString();
-           // create a MongoDB Document from the JSON string
-           Document doc = Document.parse(jsonString);
+           JSONObject json = majInvestor.toJson();
+           Document doc = new Document(json.toMap());  // No type loss using toMap
            // now we update the document in mongo
+           System.out.println("Updating Investor: " + majInvestor);
            collection.updateOne(new Document("_id", majInvestor.getInvestorId()), new Document("$set", doc));
        } catch (Exception e) {
               System.out.println("Error updating Investor: " + e.getMessage());
@@ -103,6 +107,55 @@ public class InvestorDAO implements GenericDAO<Investor> {
         } catch (Exception e) {
             System.out.println("Error deleting Investor: " + e.getMessage());
             throw new RuntimeException("Error deleting investor: " + e.getMessage());
+        }
+    }
+
+    public Investor findInvestorByWalletId(String walletId) {
+        try {
+            ObjectId walletObjectId = new ObjectId(walletId);
+            Document doc = collection.find(new Document("wallets.walletId", walletObjectId)).first();
+            if (doc != null) {
+                System.out.println("Found investor: " + doc.toJson());
+                Investor investor = documentToInvestor(doc);
+//                System.out.println("Investor found: " + investor);
+                return investor;
+            } else {
+                System.out.println("No investor found with walletId: " + walletId);
+            }
+        } catch (IllegalArgumentException e) {
+            System.err.println("Invalid walletId format: " + walletId);
+        }
+        return null;
+    }
+
+    public Wallet getWalletById(String walletId) {
+        try {
+            ObjectId walletObjectId = new ObjectId(walletId);
+            Document doc = collection.find(new Document("wallets.walletId", walletObjectId)).first();
+            if (doc != null) {
+                List<Document> wallets = (List<Document>) doc.get("wallets");
+                for (Document walletDoc : wallets) {
+                    if (walletDoc.getObjectId("walletId").equals(walletObjectId)) {
+                        return new Wallet(new JSONObject(walletDoc.toJson()));
+                    }
+                }
+            }
+        } catch (IllegalArgumentException e) {
+            System.err.println("cannot get a wallet for walletId : " + walletId + e.getMessage());
+        }
+        return null;
+    }
+
+    public Wallet updateWallet(Wallet wallet) {
+        try {
+            Document doc = new Document("wallets.walletId", wallet.getWalletId());
+            Document updateDoc = new Document("$set", new Document("wallets.$", new Document(wallet.toJson().toMap())));
+            collection.updateOne(doc, updateDoc);
+//            return findInvestorByWalletId(wallet.getWalletId().toString());
+            return wallet;
+        } catch (Exception e) {
+            System.out.println("Error updating Wallet: " + e.getMessage());
+            throw new RuntimeException("Error updating wallet: " + e.getMessage());
         }
     }
 }

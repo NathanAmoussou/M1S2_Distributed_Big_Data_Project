@@ -34,20 +34,16 @@ public class InvestHandler implements HttpHandler {
         String body = RoutesUtils.readRequestBody(exchange);
         JSONObject requestJson = new JSONObject(body);
 
-        String investorId = requestJson.optString("investorId");
+        String walletId = requestJson.optString("walletId");
         String stockTicker = requestJson.optString("stockTicker");
         int quantity = requestJson.optInt("quantity", 0);
 
         JSONObject responseJson = new JSONObject();
         try {
-            // Using the injected InvestmentService to process the investment
-            Transaction transaction = investmentService.investInAsset(investorId, stockTicker, quantity);
-            responseJson.put("transactionId", transaction.getTransactionId());
-            responseJson.put("stockTicker", transaction.getStockId());
-            responseJson.put("quantity", transaction.getQuantity());
-            responseJson.put("priceAtTransaction", transaction.getPriceAtTransaction());
 
-            RoutesUtils.sendResponse(exchange, 200, responseJson.toString());
+            Transaction transaction = investmentService.investInAsset(walletId, stockTicker, quantity);
+
+            RoutesUtils.sendResponse(exchange, 200, transaction.toString());
         } catch (Exception e) {
             responseJson.put("error", e.getMessage());
             RoutesUtils.sendResponse(exchange, 500, responseJson.toString());

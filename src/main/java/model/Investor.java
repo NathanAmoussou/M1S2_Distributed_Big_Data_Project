@@ -59,7 +59,7 @@ public class Investor {
         }
 
         // Set required fields
-        this.investorId = JsonUtils.getObjectId(json, "investorId");  // Optional returns a new ObjectId if missing
+        this.investorId = JsonUtils.getObjectId(json, "_id");  // Optional returns a new ObjectId if missing
         this.username = json.getString("username");
         this.password = json.getString("password");
         this.name = json.getString("name");
@@ -207,7 +207,7 @@ public class Investor {
 
     public JSONObject toJson() {
         JSONObject json = new JSONObject();
-        json.put("investorId", investorId);
+        json.put("_id", investorId);
         json.put("username", username);
         json.put("password", password);
         json.put("name", name);

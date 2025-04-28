@@ -85,31 +85,23 @@ public class InvestorService {
     /**
      * Ajoute des fonds au portefeuille d’un investisseur.
      */
-    public Wallet addFunds(String investorId, BigDecimal amount) {
-        Investor investor = investorDAO.findById(investorId);
+    public Wallet addFundsToWallet(String walletId, BigDecimal amount) {
+        Investor investor = investorDAO.findInvestorByWalletId(walletId);
         if (investor == null) {
-            throw new RuntimeException("Investisseur non trouvé pour l'ID " + investorId);
+            throw new RuntimeException("Aucun investisseur trouvé pour walletId: " + walletId);
         }
+        System.out.println("Investisseur trouvé pour walletId : " + investor);
 
-        // Assuming the first wallet is the primary one to be updated
-        Wallet wallet = investor.getWallets().stream().findFirst().orElse(null);
-        if (wallet == null) {
-            throw new RuntimeException("Aucun portefeuille trouvé pour l’investisseur " + investorId);
-        }
+        Wallet wallet = investor.getWallets().stream()
+                .filter(w -> w.getWalletId().toString().equals(walletId))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException(
+                        "Aucun portefeuille trouvé pour walletId: " + walletId + " dans l'investisseur: " + investor));
 
         wallet.setBalance(wallet.getBalance().add(amount));
 
         // Save the updated investor (MongoDB will update the document with the new wallet balance)
-        investorDAO.update(investor);
-
-        // Update cache if enabled
-        if (AppConfig.isEnabled()) {
-            RedisCacheService.setCache(
-                    "investor:" + investorId,
-                    investor.toString(),
-                    AppConfig.CACHE_TTL
-            );
-        }
+        this.updateInvestor(investor);
 
         return wallet;
     }

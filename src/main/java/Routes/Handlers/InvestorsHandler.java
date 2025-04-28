@@ -40,7 +40,7 @@ public class InvestorsHandler implements HttpHandler {
 
     private void get(HttpExchange exchange) throws IOException {
         JSONObject responseJson = new JSONObject();
-        System.out.println("GETting investors");
+        System.out.println("GETting all investors");
         List<Investor> investors = investorService.getAllInvestors(); // Using the injected service
         System.out.println("Investors retrieved: " + investors);
 
@@ -63,7 +63,7 @@ public class InvestorsHandler implements HttpHandler {
             Investor createdInvestor = investorService.createInvestor(investor);
             RoutesUtils.sendResponse(exchange, 201, createdInvestor.toString());
         } catch (Exception e) {
-            responseJson.put("error", "Erreur lors de la création de l'investisseur: " + e.getMessage());
+            responseJson.put("error", "Error while creating the investor profile: " + e.getMessage());
             RoutesUtils.sendResponse(exchange, 500, responseJson.toString());
         }
     }

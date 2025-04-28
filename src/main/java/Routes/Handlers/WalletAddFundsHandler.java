@@ -3,22 +3,19 @@ package Routes.Handlers;
 import Routes.RoutesUtils;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
-import model.Investor;
 import model.Wallet;
-import org.json.JSONArray;
 import org.json.JSONObject;
 import service.InvestorService;
 
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.util.List;
 
 
-public class WalletHandler implements HttpHandler {
+public class WalletAddFundsHandler implements HttpHandler {
 
     private final InvestorService investorService; // Injected service
 
-    public WalletHandler(InvestorService investorService) {
+    public WalletAddFundsHandler(InvestorService investorService) {
         this.investorService = investorService;
     }
 

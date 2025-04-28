@@ -138,17 +138,17 @@ public class Transaction {
         return json;
     }
 
-    public static Transaction fromJson(JSONObject json) {
-        return new Transaction(
-                json.getString("transactionId"),
-                json.getInt("quantity"),
-                new BigDecimal(json.getString("priceAtTransaction")),
-                LocalDateTime.parse(json.getString("createdAt")),
-                LocalDateTime.parse(json.getString("updatedAt")),
-                json.getString("stockId"),
-                new ObjectId(json.getString("walletId")),
-                json.getString("transactionTypesId"),
-                json.getString("transactionStatusId")
-        );
-    }
+//    public static Transaction fromJson(JSONObject json) {
+//        return new Transaction(
+//                json.getString("transactionId"),
+//                json.getInt("quantity"),
+//                new BigDecimal(json.getString("priceAtTransaction")),
+//                LocalDateTime.parse(json.getString("createdAt")),
+//                LocalDateTime.parse(json.getString("updatedAt")),
+//                json.getString("stockId"),
+//                new ObjectId(json.getString("walletId")),
+//                json.getString("transactionTypesId"),
+//                json.getString("transactionStatusId")
+//        );
+//    }
 }

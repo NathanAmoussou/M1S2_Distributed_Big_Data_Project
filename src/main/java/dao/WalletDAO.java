@@ -41,7 +41,7 @@ public class WalletDAO implements GenericDAO<Wallet> {
         Document doc = new Document("_id", wallet.getWalletId())
                 .append("currencyCode", wallet.getCurrencyCode())
                 .append("balance", wallet.getBalance().toString())
-                .append("walletTypeKey", wallet.getWalletTypeId());
+                .append("walletTypeKey", wallet.getWalletType());
         collection.insertOne(doc);
     }
 
@@ -49,7 +49,7 @@ public class WalletDAO implements GenericDAO<Wallet> {
     public void update(Wallet wallet) {
         Document doc = new Document("currencyCode", wallet.getCurrencyCode())
                 .append("balance", wallet.getBalance().toString())
-                .append("walletTypeKey", wallet.getWalletTypeId());
+                .append("walletTypeKey", wallet.getWalletType());
         collection.updateOne(eq("_id", wallet.getWalletId()), new Document("$set", doc));
     }
 
@@ -64,7 +64,7 @@ public class WalletDAO implements GenericDAO<Wallet> {
         w.setWalletId(new ObjectId(doc.getString("_id")));
         w.setCurrencyCode(doc.getString("currencyCode"));
         w.setBalance(new BigDecimal(doc.getString("balance")));
-        w.setWalletTypeId(doc.getString("walletTypeKey"));
+        w.setWalletType(doc.getString("walletTypeKey"));
         return w;
     }
 }

@@ -16,13 +16,22 @@ public class JsonUtils {
      */
     public static ObjectId getObjectId(JSONObject json, String key) {
         Object idObj = json.opt(key);
+
         if (idObj instanceof ObjectId) {
             return (ObjectId) idObj;
         } else if (idObj instanceof String) {
             return new ObjectId((String) idObj);
+        } else if (idObj instanceof JSONObject) {
+            JSONObject idJson = (JSONObject) idObj;
+            if (idJson.has("$oid")) {
+                return new ObjectId(idJson.getString("$oid"));
+            }
         }
-        return new ObjectId(); // Return a new ObjectId if the key is missing or invalid
+
+        System.out.println("WARN: Creating new ObjectId for key: " + key + " because it was missing or invalid");
+        return new ObjectId(); // fallback, but maybe better throw exception if you want strict behavior
     }
+
 
     /**
      * Converts a value from JSON to a BigDecimal.
