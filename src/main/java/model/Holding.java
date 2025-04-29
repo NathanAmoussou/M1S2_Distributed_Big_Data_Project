@@ -45,11 +45,13 @@ public class Holding {
         } else {
             this.totalSellCost = BigDecimal.ZERO;
         }
-        if (json.has("lastUpdated")) {
-            this.lastUpdated = LocalDateTime.parse(json.getString("lastUpdated"));
-        } else {
-            this.lastUpdated = LocalDateTime.now();
-        }
+        Object lastUpdateDateObj = json.opt("lastUpdateDate");
+        this.lastUpdated =  (lastUpdateDateObj instanceof LocalDateTime) ?
+                (LocalDateTime) lastUpdateDateObj :
+                (lastUpdateDateObj instanceof String) ?
+                        LocalDateTime.parse((String) lastUpdateDateObj) :
+                        LocalDateTime.now();
+
     }
 
     public ObjectId getHoldingId() {
@@ -95,6 +97,12 @@ public class Holding {
     }
     public void setTotalSellCost(BigDecimal totalSellCost) {
         this.totalSellCost = totalSellCost;
+    }
+    public LocalDateTime getLastUpdated() {
+        return lastUpdated;
+    }
+    public void setLastUpdated(LocalDateTime lastUpdated) {
+        this.lastUpdated = lastUpdated;
     }
 
     @Override

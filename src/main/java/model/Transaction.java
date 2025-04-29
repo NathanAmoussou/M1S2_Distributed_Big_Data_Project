@@ -8,8 +8,8 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 public class Transaction {
-    private ObjectId transactionId;
-    private int quantity;
+    private ObjectId transactionId; // MongoDB ObjectId optional since if not in the json mongodb will generate it
+    private BigDecimal quantity;
     private BigDecimal priceAtTransaction;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -21,7 +21,7 @@ public class Transaction {
     public Transaction() {
     }
 
-    public Transaction(ObjectId transactionId, int quantity, BigDecimal priceAtTransaction, LocalDateTime createdAt, LocalDateTime updatedAt, String stockId, ObjectId walletId, String transactionTypesId, String transactionStatusId) {
+    public Transaction(ObjectId transactionId, BigDecimal quantity, BigDecimal priceAtTransaction, LocalDateTime createdAt, LocalDateTime updatedAt, String stockId, ObjectId walletId, String transactionTypesId, String transactionStatusId) {
         this.transactionId = transactionId;
         this.quantity = quantity;
         this.priceAtTransaction = priceAtTransaction;
@@ -36,7 +36,7 @@ public class Transaction {
     // Constructor for JSON
     public Transaction(JSONObject json) {
         this.transactionId = JsonUtils.getObjectId(json, "_id");
-        this.quantity = json.getInt("quantity");
+        this.quantity = JsonUtils.getBigDecimal(json, "quantity");
         this.priceAtTransaction = new BigDecimal(json.getString("priceAtTransaction"));
         this.createdAt = LocalDateTime.parse(json.getString("createdAt"));
         this.updatedAt = LocalDateTime.parse(json.getString("updatedAt"));
@@ -54,11 +54,11 @@ public class Transaction {
         this.transactionId = transactionId;
     }
 
-    public int getQuantity() {
+    public BigDecimal getQuantity() {
         return quantity;
     }
 
-    public void setQuantity(int quantity) {
+    public void setQuantity(BigDecimal quantity) {
         this.quantity = quantity;
     }
 
@@ -128,9 +128,9 @@ public class Transaction {
         JSONObject json = new JSONObject();
         json.put("_id", transactionId);
         json.put("quantity", quantity);
-        json.put("priceAtTransaction", priceAtTransaction.toString());
-        json.put("createdAt", createdAt.toString());
-        json.put("updatedAt", updatedAt.toString());
+        json.put("priceAtTransaction", priceAtTransaction);
+        json.put("createdAt", createdAt);
+        json.put("updatedAt", updatedAt);
         json.put("stockId", stockId);
         json.put("walletId", walletId);
         json.put("transactionTypesId", transactionTypesId);

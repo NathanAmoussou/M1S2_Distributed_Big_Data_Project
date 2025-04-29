@@ -166,6 +166,7 @@ public class crudStockService {
 
                         // Skip if we couldn't parse the date
                         if (dateTime == null) {
+                            System.err.println("Skipping data point: " + dataPoint + " due to invalid date format" + dateStr);
                             continue;
                         }
 

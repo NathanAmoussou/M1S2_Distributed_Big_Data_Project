@@ -40,7 +40,7 @@ public class InvestorsHandler implements HttpHandler {
 
     private void get(HttpExchange exchange) throws IOException {
         JSONObject responseJson = new JSONObject();
-        System.out.println("GETting all investors");
+        System.out.println("GET all investors");
         List<Investor> investors = investorService.getAllInvestors(); // Using the injected service
         System.out.println("Investors retrieved: " + investors);
 

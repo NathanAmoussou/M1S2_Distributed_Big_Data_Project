@@ -67,8 +67,7 @@ public class HoldingsDAO implements GenericDAO<Holding>{
 
     private Holding documentToHoldings(Document doc) {
         try {
-            Holding holding = new Holding(new JSONObject(doc.toJson()));
-            return holding;
+            return new Holding(new JSONObject(doc.toJson()));
         } catch (Exception e) {
             System.out.println("Error converting document to Holding: " + e.getMessage());
             return null;
@@ -82,6 +81,20 @@ public class HoldingsDAO implements GenericDAO<Holding>{
             result.add(documentToHoldings(doc));
         }
         return result;
+    }
+
+    public List<Holding> findByStockTicker(String stockTicker) {
+        List<Holding> result = new ArrayList<>();
+        for (Document doc : collection.find(new Document("stockTicker", stockTicker))) {
+            result.add(documentToHoldings(doc));
+        }
+        return result;
+    }
+
+    public Holding findByWalletIdAndStockTicker(ObjectId walletId, String stockTicker) {
+        Document doc = collection.find(new Document("walletId", walletId).append("stockTicker", stockTicker)).first();
+        System.out.println("debug findByWalletIdAndStockTicker : " + doc);
+        return doc != null ? documentToHoldings(doc) : null;
     }
 
 }
