@@ -2,15 +2,15 @@ package dao;
 
 import com.mongodb.client.MongoCollection;
 import org.bson.Document;
-import model.Holdings;
+import model.Holding;
 import org.bson.types.ObjectId;
+import org.json.JSONObject;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
-public class HoldingsDAO implements GenericDAO<Holdings>{
+public class HoldingsDAO implements GenericDAO<Holding>{
     private final MongoCollection<Document> collection;
 
     public HoldingsDAO(MongoCollection<Document> collection) {
@@ -18,15 +18,15 @@ public class HoldingsDAO implements GenericDAO<Holdings>{
     }
 
     @Override
-    public Holdings findById(String id) {
+    public Holding findById(String id) {
         Document doc = collection.find(new Document("_id", id)).first();
         return doc != null ? documentToHoldings(doc) : null;
 
     }
 
     @Override
-    public List<Holdings> findAll() {
-        List<Holdings> result = new ArrayList<>();
+    public List<Holding> findAll() {
+        List<Holding> result = new ArrayList<>();
         for (Document doc : collection.find()) {
             result.add(documentToHoldings(doc));
         }
@@ -34,46 +34,50 @@ public class HoldingsDAO implements GenericDAO<Holdings>{
     }
 
     @Override
-    public void save(Holdings holdings) {
-        Document doc = new Document("_id", holdings.getHoldingsId())
-                .append("stockId", holdings.getStockId())
-                .append("quantity", holdings.getQuantity())
-                .append("averagePurchasePrice", holdings.getAveragePurchasePrice().toString())
-                .append("walletId", holdings.getWalletId());
-        collection.insertOne(doc);
-
+    public void save(Holding holding) {
+        try{
+            JSONObject json = holding.toJson();
+            Document doc = new Document(json.toMap());
+            collection.insertOne(doc);
+        } catch (Exception e) {
+            System.out.println("Error saving holding: " + e.getMessage());
+        }
     }
 
     @Override
-    public void update(Holdings holdings) {
-        Document doc = new Document("stockId", holdings.getStockId())
-                .append("quantity", holdings.getQuantity())
-                .append("averagePurchasePrice", holdings.getAveragePurchasePrice().toString())
-                .append("walletId", holdings.getWalletId());
-        collection.updateOne(new Document("_id", holdings.getHoldingsId()), new Document("$set", doc));
-
+    public void update(Holding holding) {
+        try {
+            JSONObject json = holding.toJson();
+            Document doc = new Document(json.toMap());
+            collection.updateOne( new Document("_id", holding.getHoldingId()), new Document("$set", doc));
+        } catch (Exception e) {
+            System.out.println("Error updating holding: " + e.getMessage());
+        }
     }
 
     @Override
     public void deleteById(String id) {
-        collection.deleteOne(new Document("_id", id));
+        try {
+            collection.deleteOne(new Document("_id", new ObjectId(id)));
+        } catch (Exception e) {
+            System.out.println("Error deleting holding: " + e.getMessage());
+        }
 
     }
 
-    private Holdings documentToHoldings(Document doc) {
-        Holdings holdings = new Holdings();
-        holdings.setHoldingsId(doc.getString("_id"));
-        holdings.setStockId(doc.getString("stockId"));
-        holdings.setQuantity(doc.getInteger("quantity"));
-        holdings.setAveragePurchasePrice(new BigDecimal(doc.getString("averagePurchasePrice")));
-        holdings.setWalletId(new ObjectId(doc.getString("walletId")));
-        return holdings;
-
+    private Holding documentToHoldings(Document doc) {
+        try {
+            Holding holding = new Holding(new JSONObject(doc.toJson()));
+            return holding;
+        } catch (Exception e) {
+            System.out.println("Error converting document to Holding: " + e.getMessage());
+            return null;
+        }
     }
 
 
-    public List<Holdings> findByWalletId(ObjectId walletId) {
-        List<Holdings> result = new ArrayList<>();
+    public List<Holding> findByWalletId(ObjectId walletId) {
+        List<Holding> result = new ArrayList<>();
         for (Document doc : collection.find(new Document("walletId", walletId))) {
             result.add(documentToHoldings(doc));
         }

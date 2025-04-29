@@ -2,9 +2,11 @@ package model;
 
 import org.bson.types.ObjectId;
 import org.json.JSONObject;
+import util.JsonUtils;
 
 public class Address {
     private ObjectId addressId;
+    private String number;
     private String street;
     private String zipCode;
     private String city;
@@ -13,8 +15,9 @@ public class Address {
     public Address() {
     }
 
-    public Address(String addressId, String street, String postalCode, String city, String countryId) {
+    public Address(String addressId, String street, String number, String postalCode, String city, String countryId) {
         this.addressId = new ObjectId(addressId); //.toHexString();
+        this.number = number;
         this.street = street;
         this.zipCode = postalCode;
         this.city = city;
@@ -24,14 +27,8 @@ public class Address {
     // json constructor
     public Address(JSONObject json) {
         System.out.println("DEBUG : " + json.toString());
-        Object addressIdObj = json.opt("addressId");
-        if (addressIdObj instanceof ObjectId) {
-            this.addressId = (ObjectId) addressIdObj;
-        } else if (addressIdObj instanceof String) {
-            this.addressId = new ObjectId((String) addressIdObj);
-        } else {
-            this.addressId = new ObjectId();
-        }
+        this.addressId = JsonUtils.getObjectId(json, "addressId");
+        this.number = json.optString("number", "");
         this.street = json.getString("street");
         this.zipCode = json.getString("zipCode");
         this.city = json.getString("city");
@@ -44,6 +41,14 @@ public class Address {
 
     public void setAddressId(ObjectId addressId) {
         this.addressId = addressId;
+    }
+
+    public String getNumber() {
+        return number;
+    }
+
+    public void setNumber(String number) {
+        this.number = number;
     }
 
     public String getStreet() {
@@ -87,6 +92,7 @@ public class Address {
     public JSONObject toJSON() {
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("addressId", addressId);
+        jsonObject.put("number", number);
         jsonObject.put("street", street);
         jsonObject.put("zipCode", zipCode);
         jsonObject.put("city", city);
@@ -94,20 +100,4 @@ public class Address {
         return jsonObject;
     }
 
-    public static Address fromJSON(JSONObject jsonObject) {
-        Address address = new Address();
-        Object addressIdObj = jsonObject.opt("addressId");
-        if (addressIdObj instanceof ObjectId) {
-            address.setAddressId((ObjectId) addressIdObj);
-        } else if (addressIdObj instanceof String) {
-            address.setAddressId(new ObjectId((String) addressIdObj));
-        } else {
-            address.setAddressId(new ObjectId());
-        }
-        address.setStreet(jsonObject.getString("street"));
-        address.setZipCode(jsonObject.getString("zipCode"));
-        address.setCity(jsonObject.getString("city"));
-        address.setCountryId(jsonObject.getString("country"));
-        return address;
-    }
 }

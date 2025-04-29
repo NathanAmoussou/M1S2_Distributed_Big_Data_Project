@@ -60,7 +60,7 @@ public class crudStockService {
             }
 
             // Fetch stock info from API
-            JSONObject stockInfo = StockApiService.getStockInfo(stockTicker, market);
+            JSONObject stockInfo = StockPythonYahooApiService.getStockInfo(stockTicker, market);
             if (stockInfo.isEmpty()) {
                 System.out.println("Failed to retrieve stock info for " + stockTicker);
                 return null;
@@ -131,7 +131,7 @@ public class crudStockService {
                 System.out.println("Fetching data for " + year + " (" + startDate + " to " + endDate + ")");
 
                 // Fetch historical data from API
-                JSONArray historicalData = StockApiService.getStockData(stockTicker, market, startDate, endDate);
+                JSONArray historicalData = StockPythonYahooApiService.getStockData(stockTicker, market, startDate, endDate);
 
                 if (historicalData.length() > 0) {
                     System.out.println("Retrieved " + historicalData.length() + " historical records for " + year);
@@ -315,7 +315,7 @@ public class crudStockService {
             }
 
             // Fetch latest stock info from API
-            JSONObject stockInfo = StockApiService.getStockInfo(stockTicker, market);
+            JSONObject stockInfo = StockPythonYahooApiService.getStockInfo(stockTicker, market);
             if (stockInfo.isEmpty()) {
                 System.out.println("Failed to retrieve stock info for " + stockTicker);
                 return null;

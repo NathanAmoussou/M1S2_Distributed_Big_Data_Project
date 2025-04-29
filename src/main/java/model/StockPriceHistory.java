@@ -143,18 +143,4 @@ public class StockPriceHistory {
         json.put("stockSplit", stockSplit.toString());
         return json;
     }
-
-    public static StockPriceHistory fromJson(JSONObject json) {
-        return new StockPriceHistory(
-                json.getString("stockPriceHistoryTicker"),
-                LocalDateTime.parse(json.getString("dateTime")),
-                new BigDecimal(json.getString("openPrice")),
-                new BigDecimal(json.getString("closePrice")),
-                new BigDecimal(json.getString("highPrice")),
-                new BigDecimal(json.getString("lowPrice")),
-                new BigDecimal(json.getString("volume")),
-                new BigDecimal(json.getString("dividend")),
-                new BigDecimal(json.getString("stockSplit"))
-        );
-    }
 }

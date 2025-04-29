@@ -2,17 +2,17 @@ package model;
 
 import org.bson.types.ObjectId;
 import org.json.JSONObject;
+import util.JsonUtils;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 public class Transaction {
-    private String transactionId;
+    private ObjectId transactionId;
     private int quantity;
     private BigDecimal priceAtTransaction;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-
     private String stockId;
     private ObjectId walletId;
     private String transactionTypesId;
@@ -21,7 +21,7 @@ public class Transaction {
     public Transaction() {
     }
 
-    public Transaction(String transactionId, int quantity, BigDecimal priceAtTransaction, LocalDateTime createdAt, LocalDateTime updatedAt, String stockId, ObjectId walletId, String transactionTypesId, String transactionStatusId) {
+    public Transaction(ObjectId transactionId, int quantity, BigDecimal priceAtTransaction, LocalDateTime createdAt, LocalDateTime updatedAt, String stockId, ObjectId walletId, String transactionTypesId, String transactionStatusId) {
         this.transactionId = transactionId;
         this.quantity = quantity;
         this.priceAtTransaction = priceAtTransaction;
@@ -34,23 +34,23 @@ public class Transaction {
     }
 
     // Constructor for JSON
-    public Transaction(JSONObject jsonObject) {
-        this.transactionId = jsonObject.getString("transactionId");
-        this.quantity = jsonObject.getInt("quantity");
-        this.priceAtTransaction = new BigDecimal(jsonObject.getString("priceAtTransaction"));
-        this.createdAt = LocalDateTime.parse(jsonObject.getString("createdAt"));
-        this.updatedAt = LocalDateTime.parse(jsonObject.getString("updatedAt"));
-        this.stockId = jsonObject.getString("stockId");
-        this.walletId = new ObjectId(jsonObject.getString("walletId"));
-        this.transactionTypesId = jsonObject.getString("transactionTypesId");
-        this.transactionStatusId = jsonObject.getString("transactionStatusId");
+    public Transaction(JSONObject json) {
+        this.transactionId = JsonUtils.getObjectId(json, "_id");
+        this.quantity = json.getInt("quantity");
+        this.priceAtTransaction = new BigDecimal(json.getString("priceAtTransaction"));
+        this.createdAt = LocalDateTime.parse(json.getString("createdAt"));
+        this.updatedAt = LocalDateTime.parse(json.getString("updatedAt"));
+        this.stockId = json.getString("stockId");
+        this.walletId = new ObjectId(json.getString("walletId"));
+        this.transactionTypesId = json.getString("transactionTypesId");
+        this.transactionStatusId = json.getString("transactionStatusId");
     }
 
-    public String getTransactionId() {
+    public ObjectId getTransactionId() {
         return transactionId;
     }
 
-    public void setTransactionId(String transactionId) {
+    public void setTransactionId(ObjectId transactionId) {
         this.transactionId = transactionId;
     }
 
@@ -126,7 +126,7 @@ public class Transaction {
 
     public JSONObject toJson() {
         JSONObject json = new JSONObject();
-        json.put("transactionId", transactionId);
+        json.put("_id", transactionId);
         json.put("quantity", quantity);
         json.put("priceAtTransaction", priceAtTransaction.toString());
         json.put("createdAt", createdAt.toString());
@@ -138,17 +138,4 @@ public class Transaction {
         return json;
     }
 
-//    public static Transaction fromJson(JSONObject json) {
-//        return new Transaction(
-//                json.getString("transactionId"),
-//                json.getInt("quantity"),
-//                new BigDecimal(json.getString("priceAtTransaction")),
-//                LocalDateTime.parse(json.getString("createdAt")),
-//                LocalDateTime.parse(json.getString("updatedAt")),
-//                json.getString("stockId"),
-//                new ObjectId(json.getString("walletId")),
-//                json.getString("transactionTypesId"),
-//                json.getString("transactionStatusId")
-//        );
-//    }
 }

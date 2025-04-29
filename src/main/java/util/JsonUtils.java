@@ -28,7 +28,7 @@ public class JsonUtils {
             }
         }
 
-        System.out.println("WARN: Creating new ObjectId for key: " + key + " because it was missing or invalid");
+        System.out.println("WARN: Creating new ObjectId for key: " + key + " because it was missing or invalid in " + json);
         return new ObjectId(); // fallback, but maybe better throw exception if you want strict behavior
     }
 

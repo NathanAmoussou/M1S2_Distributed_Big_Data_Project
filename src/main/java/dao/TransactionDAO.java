@@ -4,6 +4,7 @@ import com.mongodb.client.MongoCollection;
 import org.bson.Document;
 import model.Transaction;
 import org.bson.types.ObjectId;
+import org.json.JSONObject;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -24,22 +25,18 @@ public class TransactionDAO implements GenericDAO<Transaction> {
     }
 
     private Transaction documentToTransaction(Document doc) {
-        Transaction transaction = new Transaction();
-        transaction.setTransactionId(doc.getString("_id"));
-        transaction.setPriceAtTransaction(new BigDecimal(doc.getString("priceAtTransaction")));
-        transaction.setTransactionStatusId(doc.getString("transactionStatusId"));
-        transaction.setQuantity(doc.getInteger("quantity"));
-        transaction.setTransactionTypesId(doc.getString("transactionTypesId"));
-        transaction.setCreatedAt(LocalDateTime.ofInstant(doc.getDate("createdAt").toInstant(), java.time.ZoneId.systemDefault()));
-        transaction.setUpdatedAt(LocalDateTime.ofInstant(doc.getDate("updatedAt").toInstant(), java.time.ZoneId.systemDefault()));
-        transaction.setStockId(doc.getString("stockId"));
-        transaction.setWalletId(new ObjectId(doc.getString("walletId")));
+        try{
+            Transaction transaction = new Transaction(new JSONObject(doc.toJson()));
+            return transaction;
+        } catch (Exception e) {
+            System.out.println("Error converting document to Transaction: " + e.getMessage());
+            return null;
+        }
 
-        return transaction;
     }
 
     @Override
-    public List<Transaction> findAll() {
+    public List<Transaction> findAll() { // WE SHOULD NOT USE FIND ALL AS WE ARE IN BIG DATA AND A LOT OF DOCS
        List<Transaction> transactions = new ArrayList<>();
         for (Document doc : collection.find()) {
             transactions.add(documentToTransaction(doc));
@@ -49,42 +46,39 @@ public class TransactionDAO implements GenericDAO<Transaction> {
 
     @Override
     public void save(Transaction transaction) {
-        Document doc = new Document();
-        doc.append("_id", transaction.getTransactionId());
-        doc.append("priceAtTransaction", transaction.getPriceAtTransaction().toString());
-        doc.append("transactionStatusId", transaction.getTransactionStatusId());
-        doc.append("quantity", transaction.getQuantity());
-        doc.append("transactionTypesId", transaction.getTransactionTypesId());
-        doc.append("createdAt", transaction.getCreatedAt());
-        doc.append("stockId", transaction.getStockId());
-        doc.append("walletId", transaction.getWalletId());
-        doc.append("updatedAt", transaction.getUpdatedAt());
-        collection.insertOne(doc);
+        try {
+            JSONObject json = transaction.toJson();
+            Document doc = new Document(json.toMap());
+            collection.insertOne(doc);
+        } catch (Exception e) {
+            System.out.println("Error saving transaction: " + e.getMessage());
+        }
     }
 
     @Override
     public void update(Transaction transaction) {
-        Document doc = new Document();
-        doc.append("_id", transaction.getTransactionId());
-        doc.append("priceAtTransaction", transaction.getPriceAtTransaction().toString());
-        doc.append("transactionStatusId", transaction.getTransactionStatusId());
-        doc.append("quantity", transaction.getQuantity());
-        doc.append("transactionTypesId", transaction.getTransactionTypesId());
-        doc.append("createdAt", transaction.getCreatedAt());
-        doc.append("stockId", transaction.getStockId());
-        doc.append("walletId", transaction.getWalletId());
-        doc.append("updatedAt", transaction.getUpdatedAt());
-        collection.updateOne(new Document("_id", transaction.getTransactionId()), new Document("$set", doc));
+        try {
+            JSONObject json = transaction.toJson();
+            Document doc = new Document(json.toMap());
+            System.out.println("Updating transaction: " + transaction);
+            collection.updateOne(new Document("_id", transaction.getTransactionId()), new Document("$set", doc));
+        } catch (Exception e) {
+            System.out.println("Error updating transaction: " + e.getMessage());
+        }
+
 
     }
 
     @Override
     public void deleteById(String id) {
-        collection.deleteOne(new Document("_id", id));
-
+        try {
+            collection.deleteOne(new Document("_id", new ObjectId(id)));
+        } catch (Exception e) {
+            System.out.println("Error deleting transaction: " + e.getMessage());
+        }
     }
 
-    public List<Transaction> findByWalletId(ObjectId walletId) {
+    public List<Transaction> getTransactionsByWalletId(ObjectId walletId) {
         List<Transaction> result = new ArrayList<>();
         for (Document doc : collection.find(new Document("walletId", walletId))) {
             result.add(documentToTransaction(doc));
@@ -92,7 +86,7 @@ public class TransactionDAO implements GenericDAO<Transaction> {
         return result;
     }
 
-    public List<Transaction> findByStockId(String stockTicker) {
+    public List<Transaction> getTransactionsByStockId(String stockTicker) {
         List<Transaction> result = new ArrayList<>();
         for (Document doc : collection.find(new Document("stockId", stockTicker))) {
             result.add(documentToTransaction(doc));

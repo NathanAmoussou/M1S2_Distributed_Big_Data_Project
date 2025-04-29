@@ -57,7 +57,7 @@ public class InvestorDAO implements GenericDAO<Investor> {
     }
 
     @Override
-    public List<Investor> findAll() {
+    public List<Investor> findAll() { // SHOULD NOT USE IT !!!!!!!!!
         try {
             List<Investor> result = new ArrayList<>();
             collection.find().forEach(doc -> {

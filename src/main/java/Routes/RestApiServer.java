@@ -1,14 +1,14 @@
 package Routes;
 
 //import Routes.Handlers.InvestHandler;
-import Routes.Handlers.InvestHandler;
+//import Routes.Handlers.InvestHandler;
 import Routes.Handlers.InvestorsHandler;
 import Routes.Handlers.WalletAddFundsHandler;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoDatabase;
 import com.sun.net.httpserver.HttpServer;
-import service.InvestmentService;
+//import service.InvestmentService;
 import service.InvestorService;
 
 import java.io.IOException;
@@ -17,7 +17,7 @@ import java.net.InetSocketAddress;
 public class RestApiServer {
     private final HttpServer server;
     private final InvestorService investorService;
-    private final InvestmentService investmentService;
+//    private final InvestmentService investmentService;
     private final MongoClient mongoClient;
     private final MongoDatabase database;
 
@@ -25,7 +25,7 @@ public class RestApiServer {
         mongoClient = MongoClients.create(mongoUri);
         database = mongoClient.getDatabase(dbName);
         investorService = new InvestorService(database);
-        investmentService = new InvestmentService(database);
+//        investmentService = new InvestmentService(database);
 
         server = HttpServer.create(new InetSocketAddress(port), 0);
 
@@ -33,7 +33,7 @@ public class RestApiServer {
         server.createContext("/investors", new InvestorsHandler(investorService)); // GET: OK, POST : OK
         server.createContext("/wallets/addFunds", new WalletAddFundsHandler(investorService)); // POST: OK
 
-         server.createContext("/investors/invest", new InvestHandler(investmentService));
+//         server.createContext("/investors/invest", new InvestHandler(investmentService));
 
         // server.createContext("/investors/holdings", new HoldingsHandler());
         // server.createContext("/investors/transactions", new TransactionsHandler());

@@ -7,7 +7,7 @@ import java.net.http.HttpResponse;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-public class StockApiService {
+public class StockPythonYahooApiService {
 
     private static final String BASE_URL = "http://127.0.0.1:5000"; // Flask API base URL
     private static final HttpClient client = HttpClient.newHttpClient();

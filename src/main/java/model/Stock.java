@@ -1,12 +1,15 @@
 package model;
 
 import com.google.gson.JsonObject;
+import org.bson.types.ObjectId;
 import org.json.JSONObject;
+import util.JsonUtils;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 public class Stock {
+    private ObjectId optionalMongoId; // Optional used for MongoDB
     private String stockName; // ex "Apple Inc."
     private String stockTicker; // ex "AAPL"
     private String market; // ex "NMS"
@@ -41,8 +44,11 @@ public class Stock {
         this.currency = currency;
     }
 
+
+
     // Constructor for JSON
     public Stock(JSONObject json) {
+        this.optionalMongoId = JsonUtils.getObjectId(json, "_id");
         this.stockName = json.getString("stockName");
         this.stockTicker = json.getString("stockTicker");
         this.market = json.getString("market");
@@ -52,6 +58,14 @@ public class Stock {
         this.lastUpdated = LocalDateTime.parse(json.getString("lastUpdated"));
         this.country = json.getString("country");
         this.currency = json.getString("currency");
+    }
+
+    public ObjectId getOptionalMongoId() {
+        return optionalMongoId;
+    }
+
+    public void setOptionalMongoId(ObjectId optionalMongoId) {
+        this.optionalMongoId = optionalMongoId;
     }
 
     public String getStockTicker() {
@@ -131,6 +145,9 @@ public class Stock {
 
     public JSONObject toJson() {
         JSONObject json = new JSONObject();
+        if (optionalMongoId != null) {
+            json.put("_id", optionalMongoId.toString());
+        }
         json.put("stockName", stockName);
         json.put("stockTicker", stockTicker);
         json.put("market", market);
@@ -141,19 +158,5 @@ public class Stock {
         json.put("country", country);
         json.put("currency", currency);
         return json;
-    }
-
-    public static Stock fromJson(JSONObject json) {
-        return new Stock(
-                json.getString("stockName"),
-                json.getString("stockTicker"),
-                json.getString("market"),
-                json.getString("industry"),
-                json.getString("sector"),
-                new BigDecimal(json.getString("lastPrice")),
-                LocalDateTime.parse(json.getString("lastUpdated")),
-                json.getString("country"),
-                json.getString("currency")
-        );
     }
 }
