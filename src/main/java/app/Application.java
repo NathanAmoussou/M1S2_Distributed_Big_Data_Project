@@ -80,8 +80,9 @@ public class Application {
     private static void testStockCrud(String mongoConnectionString, String dbName) {
         crudStockService stockService = null;
         try {
+            MongoDatabase database = MongoClients.create(mongoConnectionString).getDatabase(dbName);
             // Initialize the CRUD service
-            stockService = new crudStockService(mongoConnectionString, dbName);
+            stockService = new crudStockService(database);
             
             // Test stock creation for different stocks
             System.out.println("Testing stock creation...");
@@ -127,11 +128,7 @@ public class Application {
         } catch (Exception e) {
             System.err.println("Error during stock CRUD test: " + e.getMessage());
             e.printStackTrace();
-        } finally {
-            // Make sure to close the stockService properly
-            if (stockService != null) {
-                stockService.close();
-            }
+
         }
     }
 
@@ -142,8 +139,9 @@ public class Application {
     private static void testHistoricalDataFetch(String mongoConnectionString, String dbName) {
         crudStockService stockService = null;
         try {
+            MongoDatabase database = MongoClients.create(mongoConnectionString).getDatabase(dbName);
             // Initialize the CRUD service
-            stockService = new crudStockService(mongoConnectionString, dbName);
+            stockService = new crudStockService(database);
 
             System.out.println("\n---------- Testing Historical Data Fetch ----------");
 
@@ -152,9 +150,6 @@ public class Application {
             if (msftStock != null) {
                 System.out.println("Successfully created Microsoft stock with historical data: " + msftStock);
 
-                // Get the database connection to verify data was saved
-                MongoClient mongoClient = MongoClients.create(mongoConnectionString);
-                MongoDatabase database = mongoClient.getDatabase(dbName);
                 StockPriceHistoryDAO historyDao = new StockPriceHistoryDAO(database);
 
                 // Get count of historical records saved
@@ -170,7 +165,6 @@ public class Application {
                     }
                 }
 
-                mongoClient.close();
             } else {
                 System.out.println("Failed to create Microsoft stock or it already exists");
             }
@@ -180,10 +174,7 @@ public class Application {
         } catch (Exception e) {
             System.err.println("Error during historical data fetch test: " + e.getMessage());
             e.printStackTrace();
-        } finally {
-            if (stockService != null) {
-                stockService.close();
-            }
+
         }
     }
 }

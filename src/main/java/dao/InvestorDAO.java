@@ -42,8 +42,16 @@ public class InvestorDAO implements GenericDAO<Investor> {
 
     @Override
     public Investor findById(String id) {
-        Document doc = collection.find(new Document("_id", id)).first();
-        return doc != null ? documentToInvestor(doc) : null;
+        try {
+            System.out.println("Find Investor by ID: " + id);
+            Document doc = collection.find(new Document("_id", new ObjectId(id))).first();
+            return doc != null ? documentToInvestor(doc) : null;
+        } catch (IllegalArgumentException e) {
+           throw new IllegalArgumentException("Invalid ID format: " + id, e);
+        } catch (Exception e) {
+            throw new RuntimeException("Error finding investor by ID: " + e.getMessage());
+        }
+
     }
 
     private Investor documentToInvestor(Document doc) {

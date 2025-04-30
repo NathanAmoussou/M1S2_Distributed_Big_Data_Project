@@ -1,78 +1,75 @@
-//package Routes.Handlers;
-//
-//import Routes.RoutesUtils;
-//import com.sun.net.httpserver.HttpExchange;
-//import com.sun.net.httpserver.HttpHandler;
-//import dao.HoldingsDAO;
-//import model.Holdings;
-//import org.bson.types.ObjectId;
-//import org.json.JSONArray;
-//import org.json.JSONObject;
-////import service.HoldingsService;
-//
-//import java.io.IOException;
-//import java.util.List;
-//import java.util.Map;
-//
-//public class HoldingsHandler implements HttpHandler {
-//
-//    private final HoldingsService holdingsService; // Injected service
-//
-//    // Constructor to inject the HoldingsService
-//    public HoldingsHandler(HoldingsService holdingsService) {
-//        this.holdingsService = holdingsService;
-//    }
-//
-//    @Override
-//    public void handle(HttpExchange exchange) throws IOException {
-//        String method = exchange.getRequestMethod();
-//
-//        if ("GET".equalsIgnoreCase(method)) {
-//            this.getHoldings(exchange); // Handle GET request for holdings
-//        } else {
-//            this.methodNotAllowed(exchange); // Handle unsupported methods
-//        }
-//    }
-//
-//    // Handle GET request for holdings
-//    private void getHoldings(HttpExchange exchange) throws IOException {
-//        Map<String, String> params = RoutesUtils.parseQueryParams(exchange.getRequestURI().getQuery());
-//        String walletId = params.getOrDefault("walletId", "");
-//
-//        JSONObject responseJson = new JSONObject();
-//
-//        if (walletId.isEmpty()) {
-//            responseJson.put("error", "Paramètre walletId manquant");
-//            RoutesUtils.sendResponse(exchange, 400, responseJson.toString());
-//            return;
-//        }
-//
-//        try {
-//            List<Holdings> holdings = holdingsService.getHoldingsByWalletId(new ObjectId(walletId));
-//
-//            JSONArray arr = new JSONArray();
-//            for (Holdings h : holdings) {
-//                JSONObject obj = new JSONObject();
-//                obj.put("holdingsId", h.getHoldingsId());
-//                obj.put("stockId", h.getStockId());
-//                obj.put("quantity", h.getQuantity());
-//                obj.put("averagePurchasePrice", h.getAveragePurchasePrice());
-//                arr.put(obj);
-//            }
-//
-//            responseJson.put("holdings", arr);
-//            RoutesUtils.sendResponse(exchange, 200, responseJson.toString());
-//
-//        } catch (Exception e) {
-//            responseJson.put("error", "Erreur lors de la récupération des holdings: " + e.getMessage());
-//            RoutesUtils.sendResponse(exchange, 500, responseJson.toString());
-//        }
-//    }
-//
-//    // Handle unsupported methods (for example, POST, PUT, DELETE)
-//    private void methodNotAllowed(HttpExchange exchange) throws IOException {
-//        JSONObject errorJson = new JSONObject();
-//        errorJson.put("error", "Méthode non autorisée");
-//        RoutesUtils.sendResponse(exchange, 405, errorJson.toString());
-//    }
-//}
+package Routes.Handlers;
+
+import Routes.RoutesUtils;
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import model.Holding;
+import org.bson.types.ObjectId;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import service.TransactionService; // Assuming holdings logic is here or in a dedicated HoldingsService
+import service.HoldingService;
+import java.io.IOException;
+import java.util.List;
+
+public class HoldingsHandler implements HttpHandler {
+
+    private final HoldingService holdingService; // Or a dedicated HoldingsService
+
+    public HoldingsHandler(HoldingService holdingService) {
+        this.holdingService = holdingService;
+    }
+
+    @Override
+    public void handle(HttpExchange exchange) throws IOException {
+        String method = exchange.getRequestMethod();
+        String path = exchange.getRequestURI().getPath(); // e.g., /holdings/wallet/605c7d5d80e9a43a8e1f8b1a
+
+        if ("GET".equalsIgnoreCase(method) && path.startsWith("/holdings/wallet/")) {
+            getHoldingsByWalletId(exchange, path);
+        } else {
+            JSONObject responseJson = new JSONObject();
+            responseJson.put("error", "Méthode ou chemin non autorisé");
+            RoutesUtils.sendResponse(exchange, 405, responseJson.toString());
+        }
+    }
+
+    private void getHoldingsByWalletId(HttpExchange exchange, String path) throws IOException {
+        JSONObject responseJson = new JSONObject();
+        try {
+            // --- Basic Path Parsing ---
+            String[] parts = path.split("/");
+            if (parts.length != 4 || !ObjectId.isValid(parts[3])) { // Expecting /holdings/wallet/{walletId}
+                responseJson.put("error", "Invalid path format or invalid walletId. Expected /holdings/wallet/{walletId}");
+                RoutesUtils.sendResponse(exchange, 400, responseJson.toString());
+                return;
+            }
+            String walletIdStr = parts[3];
+            // --- End Basic Path Parsing ---
+
+
+            List<Holding> holdings = holdingService.getHoldingsByWalletId(walletIdStr);
+
+            if (holdings != null) {
+                JSONArray holdingsArray = new JSONArray();
+                for (Holding holding : holdings) {
+                    holdingsArray.put(holding.toJson()); // Use existing toJson method
+                }
+                responseJson.put("holdings", holdingsArray);
+                RoutesUtils.sendResponse(exchange, 200, responseJson.toString());
+            } else {
+                // probably means the wallet exists but has no holdings
+                responseJson.put("holdings", new JSONArray()); // Return empty array
+                RoutesUtils.sendResponse(exchange, 200, responseJson.toString());
+            }
+
+        } catch (IllegalArgumentException e) {
+            responseJson.put("error", "Invalid Wallet ID format: " + e.getMessage());
+            RoutesUtils.sendResponse(exchange, 400, responseJson.toString());
+        } catch (Exception e) {
+            responseJson.put("error", "Internal server error: " + e.getMessage());
+            e.printStackTrace(); // Log the full error server-side
+            RoutesUtils.sendResponse(exchange, 500, responseJson.toString());
+        }
+    }
+}

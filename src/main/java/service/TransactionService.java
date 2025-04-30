@@ -55,8 +55,8 @@ public class TransactionService {
         Transaction transaction = new Transaction();
         transaction.setPriceAtTransaction(price);
         transaction.setQuantity(quantity);
-        transaction.setTransactionTypesId("BUY"); //TODO
-        transaction.setTransactionStatusId("COMPLETED"); //TODO
+        transaction.setTransactionTypesId("BUY"); // TODO
+        transaction.setTransactionStatusId("COMPLETED"); // TODO
         transaction.setCreatedAt(LocalDateTime.now());
         transaction.setStockId(stock.getStockTicker());
         transaction.setWalletId(wallet.getWalletId());

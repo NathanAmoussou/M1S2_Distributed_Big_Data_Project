@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import config.AppConfig;
 import dao.StockPriceHistoryDAO;
@@ -19,26 +20,14 @@ import dao.StockDAO;
 import model.Stock;
 import util.RedisCacheService;
 
+
 public class crudStockService {
     private final StockDAO stockDAO;
-    private final String mongoConnectionString;
-    private final String dbName;
-    private final MongoClient mongoClient; // Keep a reference to the MongoClient
+    private final MongoDatabase database;
 
-    public crudStockService(StockDAO stockDAO) {
-        this.stockDAO = stockDAO;
-        this.mongoConnectionString = null;
-        this.dbName = null;
-        this.mongoClient = null;
-    }
 
-    public crudStockService(String mongoConnectionString, String dbName) {
-        this.mongoConnectionString = mongoConnectionString;
-        this.dbName = dbName;
-        
-        // Create MongoClient without try-with-resources to keep it open
-        this.mongoClient = MongoClients.create(mongoConnectionString);
-        MongoDatabase database = mongoClient.getDatabase(dbName);
+    public crudStockService(MongoDatabase database) {
+        this.database = database;
         this.stockDAO = new StockDAO(database);
     }
 
@@ -113,7 +102,7 @@ public class crudStockService {
         try {
             // Get current year
             int currentYear = LocalDateTime.now().getYear();
-            StockPriceHistoryDAO historyDAO = new StockPriceHistoryDAO(mongoClient.getDatabase(dbName));
+            StockPriceHistoryDAO historyDAO = new StockPriceHistoryDAO(database);
 
             System.out.println("Fetching historical data for " + dbStockTicker + " from 2018 to " + currentYear);
 
@@ -413,13 +402,49 @@ public class crudStockService {
             return null;
         }
     }
-    
+
+
+
+// Add this method inside the crudStockService class
     /**
-     * Properly close MongoDB connection when done
+     * Get all stock tickers from the database
+     * @return List of all stock ticker strings
      */
-    public void close() {
-        if (mongoClient != null) {
-            mongoClient.close();
+    public List<String> getAllStockTickers() {
+        try {
+            // Try fetching from cache first if enabled
+            if (AppConfig.isEnabled()) {
+                String cachedTickersJson = RedisCacheService.getCache("assets:tickers:all");
+                if (cachedTickersJson != null) {
+                    JSONArray arr = new JSONArray(cachedTickersJson);
+                    List<String> tickers = arr.toList().stream()
+                            .map(Object::toString)
+                            .collect(Collectors.toList());
+                    System.out.println("Liste des tickers récupérée depuis le cache.");
+                    return tickers;
+                }
+            }
+
+            List<Stock> stocks = stockDAO.findAll(); // You already have getAllStocks, but this is more direct
+            if (stocks == null) {
+                return new ArrayList<>(); // Return empty list if null
+            }
+
+            List<String> tickers = stocks.stream()
+                    .map(Stock::getStockTicker)
+                    .collect(Collectors.toList());
+
+            // Cache the result if enabled
+            if (AppConfig.isEnabled()) {
+                JSONArray tickersArray = new JSONArray(tickers);
+                RedisCacheService.setCache("assets:tickers:all", tickersArray.toString(), AppConfig.CACHE_TTL);
+            }
+
+            return tickers;
+        } catch (Exception e) {
+            System.err.println("Error getting all stock tickers: " + e.getMessage());
+            e.printStackTrace();
+            return new ArrayList<>(); // Return empty list on error
         }
     }
 

@@ -14,7 +14,6 @@ public class TransactionHandler implements HttpHandler {
 
     private final TransactionService transactionService; // Injected service
 
-    // Constructor to inject the InvestmentService
     public TransactionHandler(TransactionService investmentService) {
         this.transactionService = investmentService;
     }

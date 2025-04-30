@@ -1,5 +1,6 @@
 package Routes;
 
+import Routes.Handlers.HoldingsHandler;
 import Routes.Handlers.TransactionHandler;
 import Routes.Handlers.InvestorsHandler;
 import Routes.Handlers.WalletAddFundsHandler;
@@ -7,8 +8,10 @@ import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoDatabase;
 import com.sun.net.httpserver.HttpServer;
+import service.HoldingService;
 import service.TransactionService;
 import service.InvestorService;
+import service.crudStockService;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -19,27 +22,49 @@ public class RestApiServer {
 //    private final InvestmentService investmentService;
     private final MongoClient mongoClient;
     private final MongoDatabase database;
+    private final TransactionService transactionService;
+    private final crudStockService stockService;
+    private final HoldingService holdingService;
 
     public RestApiServer(String mongoUri, String dbName, int port) throws IOException {
         mongoClient = MongoClients.create(mongoUri);
         database = mongoClient.getDatabase(dbName);
         investorService = new InvestorService(database);
-        TransactionService transactionService = new TransactionService(database);
+        transactionService = new TransactionService(database);
+        stockService = new crudStockService(database);
+        holdingService = new HoldingService(database);
 
         server = HttpServer.create(new InetSocketAddress(port), 0);
 
-        //(endpoints)
+        // /investors
+        // GET to retrieve all investors
+        // POST to create a new investor
         server.createContext("/investors", new InvestorsHandler(investorService)); // GET: OK, POST : OK
-        server.createContext("/wallets/addFunds", new WalletAddFundsHandler(investorService)); // POST: OK
 
-         server.createContext("/transaction/buy", new TransactionHandler(transactionService));
-         server.createContext("/transaction/sell", new TransactionHandler(transactionService));
+        // /investor/<investorId>/wallets GET to retrieve all wallets for an investor
+        server.createContext("/investor", new Routes.Handlers.InvestorWalletsHandler(investorService));
 
-        // server.createContext("/investors/holdings", new HoldingsHandler());
-        // server.createContext("/investors/transactions", new TransactionsHandler());
-        // server.createContext("/assets", new AssetsHandler());
-        // server.createContext("/investors/sell", new SellHandler());
+        // /wallet
+        // /wallet/addFunds POST to add funds to a wallet
+        server.createContext("/wallet/addFunds", new WalletAddFundsHandler(investorService)); // POST: OK
+
+        // /holdings/wallet/walletId GET to retrieve all stock holdings for a wallet
+        server.createContext("/holdings/wallet", new HoldingsHandler(holdingService));
+
+        // /transaction/buy POST to buy stocks for a wallet
+        server.createContext("/transaction/buy", new TransactionHandler(transactionService)); // Cache à faire et améliorer TransactionService
+        // /transaction/sell POST to sell stocks for a wallet
+        server.createContext("/transaction/sell", new TransactionHandler(transactionService));
+
+        // /assets GET to retrieve all available assets (tickers)
+        server.createContext("/assets", new Routes.Handlers.AssetsHandler(stockService));
+
+        // /asset
+
+        // /assets/transactions GET to retrieve all transactions for a specific asset
         // server.createContext("/assets/transactions", new AssetsTransactionsHandler());
+
+
         // server.createContext("/investors/wallet", new WalletHandler());
         // server.createContext("/investors/update", new UpdateInvestorHandler());
     }
