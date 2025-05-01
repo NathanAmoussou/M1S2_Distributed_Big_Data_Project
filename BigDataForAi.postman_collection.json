@@ -1,0 +1,962 @@
+{
+	"info": {
+		"_postman_id": "042519ec-2f49-44da-86b9-1c7cbbd6f0f5",
+		"name": "BigDataForAi",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "34510865",
+		"_collection_link": "https://tristan-7260.postman.co/workspace/assignments~6bbb9ee7-b637-4124-8ae3-faf61e8d89ac/collection/34510865-042519ec-2f49-44da-86b9-1c7cbbd6f0f5?action=share&source=collection_link&creator=34510865"
+	},
+	"item": [
+		{
+			"name": "Investors",
+			"item": [
+				{
+					"name": "Addresses",
+					"item": [
+						{
+							"name": "/investors/{{investorId}}/addresses",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:8000/investors/6813732b90db442577dee811/addresses",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8000",
+									"path": [
+										"investors",
+										"6813732b90db442577dee811",
+										"addresses"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "/investors/{{investorId}}/addresses",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n\"number\": \"123\",\r\n\"street\": \"New Street\",\r\n\"zipCode\": \"98765\",\r\n\"city\": \"New City\",\r\n\"country\": \"CA\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:8000/investors/6813732b90db442577dee811/addresses",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8000",
+									"path": [
+										"investors",
+										"6813732b90db442577dee811",
+										"addresses"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "/investors/{{investorId}}/addresses/{{addressId}}",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"street\": \"455 Updated Ave\",\r\n  \"number\": \"Suite 100\",\r\n  \"zipCode\": \"54321\",\r\n  \"city\": \"Updated City\",\r\n  \"country\": \"Mexico\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:8000/investors/6813732b90db442577dee811/addresses/6813743890db442577dee816",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8000",
+									"path": [
+										"investors",
+										"6813732b90db442577dee811",
+										"addresses",
+										"6813743890db442577dee816"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "/investors/{{investorId}}/addresses/{{addressId}}",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:8000/investors/6813732b90db442577dee811/addresses/6813743890db442577dee816",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8000",
+									"path": [
+										"investors",
+										"6813732b90db442577dee811",
+										"addresses",
+										"6813743890db442577dee816"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "/investors",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8000/investors",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"investors"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/investors",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"username\": \"john_doe\",\r\n    \"password\": \"securepassword\",\r\n    \"name\": \"John\",\r\n    \"surname\": \"Doe\",\r\n    \"email\": \"john.doe@example.com\",\r\n    \"phoneNumber\": \"123456789\",\r\n    \"addresses\": [\r\n        {\r\n            \"street\": \"123 Main St\",\r\n            \"city\": \"Springfield\",\r\n            \"zipCode\": \"12345\",\r\n            \"country\": \"USA\"\r\n        }\r\n    ]\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8000/investors",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"investors"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/investors/lookup?email={{}}",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8000/investors/lookup?email=pmanoelli0@usnews.com",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"investors",
+								"lookup"
+							],
+							"query": [
+								{
+									"key": "email",
+									"value": "pmanoelli0@usnews.com"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/investors/lookup?username={{}}",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8000/investors/lookup?username=pmanoelli0",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"investors",
+								"lookup"
+							],
+							"query": [
+								{
+									"key": "username",
+									"value": "pmanoelli0"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/investors/{{investorId}}/wallets",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"currencyCode\": \"USD\",\r\n  \"walletType\": \"default\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8000/investors/6813728990db442577dee80a/wallets",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"investors",
+								"6813728990db442577dee80a",
+								"wallets"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "http://localhost:8000/investors/{{investorId}}",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n//   \"username\":\"sdfsfdsf\", // if username already present for another investor there is an error \r\n  \"name\": \"Testius\",\r\n  \"phoneNumber\": \"5559998888\",\r\n  \"invalidField\": \"should_be_ignored\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8000/investors/6813728990db442577dee80a",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"investors",
+								"6813728990db442577dee80a"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Transactions",
+			"item": [
+				{
+					"name": "/transactions/buy",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"walletId\": \"681119dbde4a4d4717129a8d\",\r\n    \"stockTicker\": \"MSFT\",\r\n    \"quantity\": 1\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8000/transactions/buy",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"transactions",
+								"buy"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/transactions/sell",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"walletId\": \"681119dbde4a4d4717129a8d\",\r\n    \"stockTicker\": \"MSFT\",\r\n    \"quantity\": 1\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8000/transactions/sell",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"transactions",
+								"sell"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Stocks",
+			"item": [
+				{
+					"name": "Stock History",
+					"item": [
+						{
+							"name": "/stocks/{{ticker}}/history",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:8000/stocks/AIR.PA/history",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8000",
+									"path": [
+										"stocks",
+										"AIR.PA",
+										"history"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "/stocks/{{ticker}}/history?startDate={{2023-01-01}}&endDate={{2023-01-31}}",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:8000/stocks/AMZN/history?startDate=2023-01-01&endDate=2023-01-31",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8000",
+									"path": [
+										"stocks",
+										"AMZN",
+										"history"
+									],
+									"query": [
+										{
+											"key": "startDate",
+											"value": "2023-01-01"
+										},
+										{
+											"key": "endDate",
+											"value": "2023-01-31"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "/stocks/{{ticker}}/history?page={{int}}&pageSize={{int}}",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:8000/stocks/AMZN/history?page=2&pageSize=50",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8000",
+									"path": [
+										"stocks",
+										"AMZN",
+										"history"
+									],
+									"query": [
+										{
+											"key": "page",
+											"value": "2"
+										},
+										{
+											"key": "pageSize",
+											"value": "50"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "/stocks/{{ticker}}/history?startDate={{}}&endDate={{}}&page={{}}&pageSize={{}}",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:8000/stocks/AMZN/history?startDate=2022-01-01&endDate=2022-12-31&page=1&pageSize=10",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8000",
+									"path": [
+										"stocks",
+										"AMZN",
+										"history"
+									],
+									"query": [
+										{
+											"key": "startDate",
+											"value": "2022-01-01"
+										},
+										{
+											"key": "endDate",
+											"value": "2022-12-31"
+										},
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "pageSize",
+											"value": "10"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Stock Evolution",
+					"item": [
+						{
+							"name": "/stocks/MSFT/evolution?startDate={{}}&endDate={{}}",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:8000/stocks/MSFT/evolution?startDate=2023-01-03&endDate=2025-05-01",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8000",
+									"path": [
+										"stocks",
+										"MSFT",
+										"evolution"
+									],
+									"query": [
+										{
+											"key": "startDate",
+											"value": "2023-01-03"
+										},
+										{
+											"key": "endDate",
+											"value": "2025-05-01"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "/stocks",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8000/stocks",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"stocks"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/stocks",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"ticker\": \"AIR\",\r\n    \"market\": \"PA\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8000/stocks",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"stocks"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/stocks/{{ticker}}",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8000/stocks/AMZN",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"stocks",
+								"AMZN"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Wallets",
+			"item": [
+				{
+					"name": "Wallet PnL",
+					"item": [
+						{
+							"name": "(asset PNL) /wallets/{{walletId}}/profitLoss?stockTicker={{sockTicker}}",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:8000/wallets/68138f433e05cd45ec44e707/profitLoss?stockTicker=MSFT",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8000",
+									"path": [
+										"wallets",
+										"68138f433e05cd45ec44e707",
+										"profitLoss"
+									],
+									"query": [
+										{
+											"key": "stockTicker",
+											"value": "MSFT"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "(global PNL) /wallets/{{walletId}}/profitLoss",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:8000/wallets/68138f433e05cd45ec44e707/profitLoss",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8000",
+									"path": [
+										"wallets",
+										"68138f433e05cd45ec44e707",
+										"profitLoss"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "/wallets/{{walletId}}/holdings",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8000/wallets/681119dbde4a4d4717129a8d/holdings",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"wallets",
+								"681119dbde4a4d4717129a8d",
+								"holdings"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/wallets/{{walletId}}/funds",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"amount\": 1750.50\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8000/wallets/681119dbde4a4d4717129a8d/funds",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"wallets",
+								"681119dbde4a4d4717129a8d",
+								"funds"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/wallets/{{walletId}}",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8000/wallets/681119dbde4a4d4717129a8d",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"wallets",
+								"681119dbde4a4d4717129a8d"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/wallets/{{walletId}}/transactions",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8000/wallets/681119dbde4a4d4717129a8d/transactions",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"wallets",
+								"681119dbde4a4d4717129a8d",
+								"transactions"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/wallets/{{walletId}}/transactions?startDate={{YYYY-MM-DD}}&endDate={{YYYY-MM-DD}}",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8000/wallets/681119dbde4a4d4717129a8d/transactions?startDate=2024-01-01&endDate=2025-05-31",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"wallets",
+								"681119dbde4a4d4717129a8d",
+								"transactions"
+							],
+							"query": [
+								{
+									"key": "startDate",
+									"value": "2024-01-01"
+								},
+								{
+									"key": "endDate",
+									"value": "2025-05-31"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/wallets/{{walletId}}/value",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8000/wallets/681119dbde4a4d4717129a8d/value",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"wallets",
+								"681119dbde4a4d4717129a8d",
+								"value"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Reports",
+			"item": [
+				{
+					"name": "Top Traded Stocks",
+					"item": [
+						{
+							"name": "reports/top-traded-stocks?startDate={{}}&endDate={{}}",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:8000/reports/top-traded-stocks?startDate=2025-01-01T23:59:59&endDate=2025-12-31T23:59:59",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8000",
+									"path": [
+										"reports",
+										"top-traded-stocks"
+									],
+									"query": [
+										{
+											"key": "startDate",
+											"value": "2025-01-01T23:59:59"
+										},
+										{
+											"key": "endDate",
+											"value": "2025-12-31T23:59:59"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "reports/top-traded-stocks?limit=1",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:8000/reports/top-traded-stocks?limit=1",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8000",
+									"path": [
+										"reports",
+										"top-traded-stocks"
+									],
+									"query": [
+										{
+											"key": "limit",
+											"value": "1"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "reports/top-traded-stocks",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:8000/reports/top-traded-stocks",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8000",
+									"path": [
+										"reports",
+										"top-traded-stocks"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		}
+	]
+}
