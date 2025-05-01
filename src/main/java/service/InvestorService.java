@@ -129,4 +129,12 @@ public class InvestorService {
 
         return investor;
     }
+
+    public Wallet getWalletById(String walletId) {
+        Wallet wallet = investorDAO.getWalletById(walletId);
+        if (wallet == null) {
+            throw new RuntimeException("Aucun portefeuille trouvé pour walletId: " + walletId);
+        }
+        return wallet;
+    }
 }

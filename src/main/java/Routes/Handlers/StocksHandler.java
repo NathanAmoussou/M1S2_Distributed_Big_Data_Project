@@ -21,7 +21,7 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 
 
-public class StockHandler implements HttpHandler {
+public class StocksHandler implements HttpHandler {
 
     private final crudStockService stockService;
 
@@ -34,7 +34,7 @@ public class StockHandler implements HttpHandler {
     private static final Pattern BASE_PATTERN = Pattern.compile("^/stocks/?$"); // Allow optional trailing slash
 
 
-    public StockHandler(crudStockService stockService) {
+    public StocksHandler(crudStockService stockService) {
         this.stockService = stockService;
     }
 

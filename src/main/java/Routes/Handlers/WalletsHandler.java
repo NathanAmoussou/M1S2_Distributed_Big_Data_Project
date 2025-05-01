@@ -22,7 +22,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class WalletHandler implements HttpHandler {
+public class WalletsHandler implements HttpHandler {
 
     private final InvestorService investorService;
     private final HoldingService holdingService;
@@ -39,7 +39,7 @@ public class WalletHandler implements HttpHandler {
     private static final Pattern WALLET_ID_PATTERN = Pattern.compile("^/wallets/([a-fA-F0-9]{24})$");
 
 
-    public WalletHandler(InvestorService investorService, HoldingService holdingService, TransactionService transactionService) {
+    public WalletsHandler(InvestorService investorService, HoldingService holdingService, TransactionService transactionService) {
         this.investorService = investorService;
         this.holdingService = holdingService;
         this.transactionService = transactionService;

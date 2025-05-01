@@ -11,11 +11,11 @@ import model.Transaction; // Assuming this exists and has toJson()
 import java.io.IOException;
 import java.math.BigDecimal;
 
-public class TransactionHandler implements HttpHandler {
+public class TransactionsHandler implements HttpHandler {
 
     private final TransactionService transactionService;
 
-    public TransactionHandler(TransactionService transactionService) {
+    public TransactionsHandler(TransactionService transactionService) {
         this.transactionService = transactionService;
     }
 

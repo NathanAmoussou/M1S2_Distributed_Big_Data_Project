@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class InvestorHandler implements HttpHandler {
+public class InvestorsHandler implements HttpHandler {
 
     private final InvestorService investorService;
     // Pattern to match /investors/{investorId}
@@ -23,7 +23,7 @@ public class InvestorHandler implements HttpHandler {
     // Pattern to match /investors/{investorId}/wallets
     private static final Pattern INVESTOR_WALLETS_PATTERN = Pattern.compile("^/investors/([a-fA-F0-9]{24})/wallets$");
 
-    public InvestorHandler(InvestorService investorService) {
+    public InvestorsHandler(InvestorService investorService) {
         this.investorService = investorService;
     }
 
