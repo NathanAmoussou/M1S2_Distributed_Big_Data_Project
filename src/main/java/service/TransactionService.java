@@ -1,21 +1,28 @@
 package service;
 
-import com.mongodb.client.MongoDatabase;
-import dao.HoldingsDAO;
-import dao.StockDAO;
-import dao.TransactionDAO;
-import dao.InvestorDAO;
-import model.Holding;
-import model.Stock;
-import model.Transaction;
-import model.Wallet;
-import org.bson.types.ObjectId;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
+
+import org.bson.types.ObjectId;
+
+import com.mongodb.client.MongoDatabase;
+
+import cacheDAO.HoldingCacheDAO;
+import cacheDAO.InvestorCacheDAO;
+import cacheDAO.TransactionCacheDAO;
+import config.AppConfig;
+import dao.HoldingsDAO;
+import dao.InvestorDAO;
+import dao.StockDAO;
+import dao.TransactionDAO;
+import model.Holding;
+import model.Investor;
+import model.Stock;
+import model.Transaction;
+import model.Wallet;
 
 public class TransactionService {
     private final InvestorDAO investorDAO;
@@ -23,11 +30,19 @@ public class TransactionService {
     private final TransactionDAO transactionDAO;
     private final HoldingsDAO holdingsDAO;
 
+    private final InvestorCacheDAO investorCacheDAO;
+    private final TransactionCacheDAO transactionCacheDAO;
+    private final HoldingCacheDAO holdingCacheDAO;
+
     public TransactionService(MongoDatabase database) {
         this.investorDAO = new InvestorDAO(database);
         this.stockDAO = new StockDAO(database);
         this.transactionDAO = new TransactionDAO(database.getCollection("transactions"));
         this.holdingsDAO = new HoldingsDAO(database.getCollection("holdings"));
+
+        this.investorCacheDAO = new InvestorCacheDAO();
+        this.transactionCacheDAO = new TransactionCacheDAO();
+        this.holdingCacheDAO = new HoldingCacheDAO();
     }
 
     /**
@@ -86,7 +101,19 @@ public class TransactionService {
             holdingsDAO.save(holding);
         }
 
-//        updateTransactionCache(wallet, transaction); // TO DO AJOUTER REDIS
+
+
+
+        if (AppConfig.isEnabled()) {
+            Investor investor = investorDAO.findInvestorByWalletId(walletId);
+
+            System.out.println("Caching...");
+            investorCacheDAO.delete(investor.getInvestorId().toString()); // Simple invalidation
+            transactionCacheDAO.invalidateByWalletId(wallet.getWalletId());
+
+            holdingCacheDAO.saveOrUpdateIndividual(holding, AppConfig.CACHE_TTL);
+            holdingCacheDAO.invalidateByWalletId(wallet.getWalletId());
+        }
         return transaction;
     }
 
@@ -150,8 +177,17 @@ public class TransactionService {
             holdingsDAO.save(holding);
         }
 
-//        updateTransactionCache(wallet, transaction); // TO DO AJOUTER REDIS
+        if (AppConfig.isEnabled()) {
+            Investor investor = investorDAO.findInvestorByWalletId(walletId);
 
+            investorCacheDAO.delete(investor.getInvestorId().toString());
+
+            transactionCacheDAO.invalidateByWalletId(wallet.getWalletId());
+
+            holdingCacheDAO.saveOrUpdateIndividual(holding, AppConfig.CACHE_TTL);
+
+            holdingCacheDAO.invalidateByWalletId(wallet.getWalletId());
+        }
         return transaction;
     }
 

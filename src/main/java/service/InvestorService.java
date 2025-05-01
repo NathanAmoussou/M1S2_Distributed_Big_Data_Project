@@ -1,5 +1,6 @@
 package service;
 
+import cacheDAO.InvestorCacheDAO;
 import com.mongodb.client.MongoDatabase;
 import config.AppConfig;
 import dao.InvestorDAO;
@@ -13,14 +14,17 @@ import util.RedisCacheService;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 public class InvestorService {
     private final InvestorDAO investorDAO;
     private final MongoDatabase database;
+    private final InvestorCacheDAO investorCacheDAO;
 
     public InvestorService(MongoDatabase database) {
         this.database = database;
         this.investorDAO = new InvestorDAO(database);
+        this.investorCacheDAO = new InvestorCacheDAO();
     }
 
     /**
@@ -46,10 +50,9 @@ public class InvestorService {
         investorDAO.save(investor);
 
         // Cache the investor if enabled
-        if (AppConfig.isEnabled()) {
-            RedisCacheService.setCache(
-                    "investor:" + investor.getInvestorId(),
-                    investor.toString(), AppConfig.CACHE_TTL);
+        if (AppConfig.isEnabled() && investor.getInvestorId() != null) {
+            investorCacheDAO.save(investor, AppConfig.CACHE_TTL);
+            System.out.println("Investor created: " + investor+ " and has been cached.");
         }
 
         return investor;
@@ -58,17 +61,19 @@ public class InvestorService {
     public Investor getInvestor(String investorId) {
         try {
             if (AppConfig.isEnabled()) {
-                String cachedInvestor = RedisCacheService.getCache("investor:" + investorId);
-                if (cachedInvestor != null) {
-                    JSONObject json = new JSONObject(cachedInvestor);
-                    Investor cached = new Investor(json);
-                    System.out.println("Investisseur récupéré depuis le cache.");
-                    return cached;
+                Optional<Investor> investor = investorCacheDAO.findById(investorId);
+                if (investor.isPresent()) {
+                    System.out.println("Investor found: " + investor);
+                    return investor.get();
                 }
+                System.out.println("Investor not found in the cache: " + investor);
             }
+
             Investor investor = investorDAO.findById(investorId);
+
             if (investor != null && AppConfig.isEnabled()) {
-                RedisCacheService.setCache("investor:" + investorId, investor.toString(), AppConfig.CACHE_TTL);
+                investorCacheDAO.save(investor, AppConfig.CACHE_TTL);
+                System.out.println("Investor has been cached.");
             }
             return investor;
         } catch(Exception e) {
@@ -119,11 +124,7 @@ public class InvestorService {
 
         // Cache the updated investor if enabled
         if (AppConfig.isEnabled()) {
-            RedisCacheService.setCache(
-                    "investor:" + investor.getInvestorId(),
-                    investor.toString(),
-                    AppConfig.CACHE_TTL
-            );
+            investorCacheDAO.save(investor, AppConfig.CACHE_TTL);
         }
 
         return investor;

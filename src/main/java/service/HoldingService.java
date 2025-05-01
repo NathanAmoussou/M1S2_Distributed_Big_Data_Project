@@ -1,6 +1,8 @@
 package service;
 
+import cacheDAO.HoldingCacheDAO;
 import com.mongodb.client.MongoDatabase;
+import config.AppConfig;
 import dao.HoldingsDAO;
 import dao.StockDAO;
 import dao.TransactionDAO;
@@ -14,13 +16,16 @@ import org.bson.types.ObjectId;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 public class HoldingService {
 
     private final HoldingsDAO holdingsDAO;
+    private final HoldingCacheDAO holdingCacheDAO;
 
     public HoldingService(MongoDatabase database) {
         this.holdingsDAO = new HoldingsDAO(database.getCollection("holdings"));
+        this.holdingCacheDAO = new HoldingCacheDAO();
     }
 
     /**
@@ -36,10 +41,21 @@ public class HoldingService {
         }
         ObjectId walletObjId = new ObjectId(walletIdStr);
 
+        if (AppConfig.isEnabled()){
+            Optional<List<Holding>> cachedHoldings = holdingCacheDAO.findByWalletId(walletObjId);
+            if (cachedHoldings.isPresent()) {
+                System.out.println("Holdings for wallet [ " + walletIdStr +  "] found in cache.");
+                return cachedHoldings.get();
+            }
+        }
+        List<Holding> holdings = holdingsDAO.findByWalletId(walletObjId);
 
+        if (AppConfig.isEnabled() && holdings != null) {
+            holdingCacheDAO.saveByWalletId(walletObjId, holdings, AppConfig.CACHE_TTL);
+        }
         // adding caching here around holdingsDAO.findByWalletId
 
-        return holdingsDAO.findByWalletId(walletObjId);
+        return holdings;
     }
 
 

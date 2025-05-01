@@ -5,32 +5,34 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
+import cacheDAO.StockCacheDAO;
 import config.AppConfig;
 import dao.StockPriceHistoryDAO;
 import model.StockPriceHistory;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import com.mongodb.client.MongoClient;
-import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoDatabase;
 
 import dao.StockDAO;
 import model.Stock;
-import util.RedisCacheService;
 
 
 public class crudStockService {
     private final StockDAO stockDAO;
     private final MongoDatabase database;
-    private final StockPriceHistoryDAO historyDao;
+    private final StockPriceHistoryDAO historyDao;    private final StockCacheDAO stockCacheDAO;
+
 
     public crudStockService(MongoDatabase database) {
         this.database = database;
         this.stockDAO = new StockDAO(database);
         this.historyDao = new StockPriceHistoryDAO(database);
+        this.stockCacheDAO = new StockCacheDAO();
+
     }
 
     /**
@@ -47,6 +49,11 @@ public class crudStockService {
             Stock existingStock = stockDAO.findByStockTicker(dbStockTicker);
             if (existingStock != null) {
                 System.out.println("Stock with ticker " + dbStockTicker + " already exists");
+
+                if (AppConfig.isEnabled()){
+                    this.stockCacheDAO.save(existingStock,AppConfig.CACHE_TTL);
+                }
+
                 return null;
             }
 
@@ -75,11 +82,10 @@ public class crudStockService {
             System.out.println("Created stock: " + stock);
 
             if (AppConfig.isEnabled()) {
-                RedisCacheService.setCache(
-                        "stock:" + dbStockTicker,
-                        stock.toString(),
-                        AppConfig.CACHE_TTL
-                );
+                stockCacheDAO.save(stock,AppConfig.CACHE_TTL);
+                stockCacheDAO.invalidateAll();
+                stockCacheDAO.invalidateAllTickers();
+                System.out.println("Cached stock and invalidated lists.");
             }
 
 
@@ -219,28 +225,22 @@ public class crudStockService {
     public Stock readStock(String stockTicker) {
         try {
             if (AppConfig.isEnabled()) {
-                String cachedStockJson = RedisCacheService.getCache("stock:" + stockTicker);
-                if (cachedStockJson != null) {
-                    JSONObject json = new JSONObject(cachedStockJson);
-                    Stock cachedStock = new Stock(json);
-                    System.out.println("Stock récupéré depuis le cache: " + cachedStock);
-                    return cachedStock;
+                Optional<Stock> cachedStock = stockCacheDAO.findByTicker(stockTicker);
+                if (cachedStock.isPresent()) {
+                    System.out.println("Stock [" + stockTicker + "] found in cache.");
+                    return cachedStock.get();
                 }
+                System.out.println("Cache miss for [" + stockTicker + "] Reading from the DB...");
             }
 
             Stock stock = stockDAO.findByStockTicker(stockTicker);
-            if (stock == null) {
-                System.out.println("Stock with ticker " + stockTicker + " not found");
-                return null;
-            }
-
-            // Mettre en cache le stock lu
-            if (AppConfig.isEnabled()) {
-                RedisCacheService.setCache(
-                        "stock:" + stockTicker,
-                        stock.toString(),
-                        AppConfig.CACHE_TTL
-                );
+            if (stock != null) {
+                System.out.println("Stock [" + stockTicker + "] found in DB. Caching...");
+                if (AppConfig.isEnabled()) {
+                    stockCacheDAO.save(stock, AppConfig.CACHE_TTL);
+                }
+            } else {
+                System.out.println("Stock [" + stockTicker + "] not found in DB.");
             }
             return stock;
         } catch (Exception e) {
@@ -257,28 +257,20 @@ public class crudStockService {
     public List<Stock> getAllStocks() {
         try {
             if (AppConfig.isEnabled()) {
-                String cachedStocks = RedisCacheService.getCache("stocks:all");
-                if (cachedStocks != null) {
-                    JSONArray arr = new JSONArray(cachedStocks);
-                    List<Stock> stocks = new ArrayList<>();
-
-                    for (int i = 0; i < arr.length(); i++) {
-                        stocks.add(new Stock(arr.getJSONObject(i)));
-                    }
-                    System.out.println("Liste des stocks récupérée depuis le cache.");
-                    return stocks;
+                Optional<List<Stock>> cachedStocks = stockCacheDAO.findAll();
+                if (cachedStocks.isPresent()) {
+                    System.out.println("Inventory list found in cache.");
+                    return cachedStocks.get();
                 }
+                System.out.println("Cache miss for stock list. Read from DB...");
             }
 
             List<Stock> stocks = stockDAO.findAll();
 
             // On met en cache la liste des stocks
-            if (AppConfig.isEnabled() && stocks != null) {
-                JSONArray arr = new JSONArray();
-                for (Stock s : stocks) {
-                    arr.put(s.toString());
-                }
-                RedisCacheService.setCache("stocks:all", arr.toString(), AppConfig.CACHE_TTL);
+            if (AppConfig.isEnabled() ){/// && !stocks.isEmpty()) { //TODO est ce qu'il faut quand meme chaché quand la liste est vide??
+                System.out.println("Stock list found in DB (" + stocks.size() + " items). Caching...");
+                stockCacheDAO.saveAll(stocks, AppConfig.CACHE_TTL);
             }
 
             return stocks;
@@ -303,6 +295,9 @@ public class crudStockService {
             Stock existingStock = stockDAO.findByStockTicker(dbStockTicker);
             if (existingStock == null) {
                 System.out.println("Stock with ticker " + dbStockTicker + " not found");
+                if (AppConfig.isEnabled()) {
+                    stockCacheDAO.delete(dbStockTicker);
+                }
                 return null;
             }
 
@@ -329,13 +324,12 @@ public class crudStockService {
             System.out.println("Updated stock: " + existingStock);
 
             if (AppConfig.isEnabled()) {
-                RedisCacheService.setCache(
-                        "stock:" + dbStockTicker,
-                        existingStock.toString(),
-                        AppConfig.CACHE_TTL
-                );
+                stockCacheDAO.save(existingStock, AppConfig.CACHE_TTL);
+                //pas sûr de mon coup
+                stockCacheDAO.invalidateAll();
+                stockCacheDAO.invalidateAllTickers();
+                System.out.println("Stock [" + dbStockTicker + "] updated in cache and lists invalidated.");
             }
-
 
             return existingStock;
         } catch (Exception e) {
@@ -355,6 +349,9 @@ public class crudStockService {
             Stock existingStock = stockDAO.findByStockTicker(stockTicker);
             if (existingStock == null) {
                 System.out.println("Stock with ticker " + stockTicker + " not found");
+                if (AppConfig.isEnabled()) {
+                    stockCacheDAO.delete(stockTicker);
+                }
                 return false;
             }
 
@@ -362,7 +359,10 @@ public class crudStockService {
             System.out.println("Deleted stock with ticker: " + stockTicker);
 
             if (AppConfig.isEnabled()) {
-                RedisCacheService.deleteCache("stock:" + stockTicker);
+                stockCacheDAO.delete(stockTicker);
+                stockCacheDAO.invalidateAll();
+                stockCacheDAO.invalidateAllTickers();
+                System.out.println("Stock [" + stockTicker + "] deleted in cache and lists invalidated.");
             }
             return true;
         } catch (Exception e) {
@@ -382,6 +382,9 @@ public class crudStockService {
             Stock existingStock = stockDAO.findByStockTicker(stock.getStockTicker());
             if (existingStock == null) {
                 System.out.println("Stock with ticker " + stock.getStockTicker() + " not found");
+                if (AppConfig.isEnabled()) {
+                    stockCacheDAO.delete(stock.getStockTicker());
+                }
                 return null;
             }
 
@@ -390,11 +393,10 @@ public class crudStockService {
             System.out.println("Manually updated stock: " + stock);
 
             if (AppConfig.isEnabled()) {
-                RedisCacheService.setCache(
-                        "stock:" + stock.getStockTicker(),
-                        existingStock.toString(),
-                        AppConfig.CACHE_TTL
-                );
+                stockCacheDAO.save(existingStock, AppConfig.CACHE_TTL);
+                stockCacheDAO.invalidateAll();
+                stockCacheDAO.invalidateAllTickers();
+                System.out.println("Stock [" + stock.getStockTicker() + "] manually updated in cache and lists invalidated.");
             }
 
             return stock;
@@ -416,15 +418,12 @@ public class crudStockService {
         try {
             // Try fetching from cache first if enabled
             if (AppConfig.isEnabled()) {
-                String cachedTickersJson = RedisCacheService.getCache("assets:tickers:all");
-                if (cachedTickersJson != null) {
-                    JSONArray arr = new JSONArray(cachedTickersJson);
-                    List<String> tickers = arr.toList().stream()
-                            .map(Object::toString)
-                            .collect(Collectors.toList());
-                    System.out.println("Liste des tickers récupérée depuis le cache.");
-                    return tickers;
+                Optional<List<String>> cachedTickers = stockCacheDAO.findAllTickers();
+                if (cachedTickers.isPresent()) {
+                    System.out.println("List ticker found in cache.");
+                    return cachedTickers.get();
                 }
+                System.out.println("Cache miss for stock list. Read from DB...");
             }
 
             List<Stock> stocks = stockDAO.findAll(); // You already have getAllStocks, but this is more direct
@@ -438,8 +437,8 @@ public class crudStockService {
 
             // Cache the result if enabled
             if (AppConfig.isEnabled()) {
-                JSONArray tickersArray = new JSONArray(tickers);
-                RedisCacheService.setCache("assets:tickers:all", tickersArray.toString(), AppConfig.CACHE_TTL);
+                System.out.println("List ticker found in DB: " + tickers.size() + " elements. Caching...");
+                stockCacheDAO.saveAllTickers(tickers, AppConfig.CACHE_TTL);
             }
 
             return tickers;
