@@ -1,20 +1,21 @@
 package Routes;
 
-import Routes.Handlers.HoldingsHandler;
-import Routes.Handlers.TransactionHandler;
-import Routes.Handlers.InvestorsHandler;
-import Routes.Handlers.WalletAddFundsHandler;
+import java.io.IOException;
+import java.net.InetSocketAddress;
+
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoDatabase;
 import com.sun.net.httpserver.HttpServer;
-import service.HoldingService;
-import service.TransactionService;
-import service.InvestorService;
-import service.crudStockService;
 
-import java.io.IOException;
-import java.net.InetSocketAddress;
+import Routes.Handlers.HoldingsHandler;
+import Routes.Handlers.InvestorsHandler;
+import Routes.Handlers.TransactionHandler;
+import Routes.Handlers.WalletAddFundsHandler;
+import service.HoldingService;
+import service.InvestorService;
+import service.TransactionService;
+import service.crudStockService;
 
 public class RestApiServer {
     private final HttpServer server;
@@ -43,7 +44,7 @@ public class RestApiServer {
 
         // /investor/<investorId>/wallets GET to retrieve all wallets for an investor
         server.createContext("/investor", new Routes.Handlers.InvestorWalletsHandler(investorService));
-
+        
         // /wallet
         // /wallet/addFunds POST to add funds to a wallet
         server.createContext("/wallet/addFunds", new WalletAddFundsHandler(investorService)); // POST: OK
@@ -59,6 +60,11 @@ public class RestApiServer {
         // /assets GET to retrieve all available assets (tickers)
         server.createContext("/assets", new Routes.Handlers.AssetsHandler(stockService));
 
+        server.createContext("/stocks", new Routes.Handlers.StocksHandler(stockService));
+
+        server.createContext("/stocks/", new Routes.Handlers.StockHistoryHandler(stockService));
+
+        server.createContext("/wallet/", new Routes.Handlers.WalletTransactionsHandler(transactionService));
         // /asset
 
         // /assets/transactions GET to retrieve all transactions for a specific asset

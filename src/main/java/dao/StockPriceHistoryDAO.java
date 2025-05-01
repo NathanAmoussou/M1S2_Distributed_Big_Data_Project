@@ -5,12 +5,15 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.Sorts;
 import org.bson.Document;
 
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 
 import model.StockPriceHistory;
+import org.bson.conversions.Bson;
 import org.bson.types.Decimal128;
 
 public class StockPriceHistoryDAO implements GenericDAO<StockPriceHistory> {
@@ -159,5 +162,57 @@ public class StockPriceHistoryDAO implements GenericDAO<StockPriceHistory> {
         }
         return BigDecimal.ZERO;
     }
+
+    /// /////////////////////
+
+    // Add these methods
+    public List<StockPriceHistory> findByTickerAndDateRangePaginated(String ticker, LocalDateTime startDateTime, LocalDateTime endDateTime, int skip, int limit) {
+        List<StockPriceHistory> results = new ArrayList<>();
+        try {
+            // Build the filter
+            List<Bson> filters = new ArrayList<>();
+            filters.add(Filters.eq("stockPriceHistoryTicker", ticker));
+            if (startDateTime != null) {
+                filters.add(Filters.gte("dateTime", startDateTime));
+            }
+            if (endDateTime != null) {
+                filters.add(Filters.lte("dateTime", endDateTime));
+            }
+            Bson finalFilter = filters.isEmpty() ? new Document() : Filters.and(filters);
+
+            collection.find(finalFilter)
+                    .sort(Sorts.ascending("dateTime"))
+                    .skip(skip)
+                    .limit(limit)
+                    .forEach(doc -> results.add(documentToStockPriceHistory(doc)));
+            return results;
+        } catch (Exception e) {
+            System.err.println("Error finding paginated stock history: " + e.getMessage());
+            e.printStackTrace();
+            return new ArrayList<>();
+        }
+    }
+
+    public long countByTickerAndDateRange(String ticker, LocalDateTime startDateTime, LocalDateTime endDateTime) {
+        try {
+            // Build the filter (same as above)
+            List<Bson> filters = new ArrayList<>();
+            filters.add(Filters.eq("stockPriceHistoryTicker", ticker));
+            if (startDateTime != null) {
+                filters.add(Filters.gte("dateTime", startDateTime));
+            }
+            if (endDateTime != null) {
+                filters.add(Filters.lte("dateTime", endDateTime));
+            }
+            Bson finalFilter = filters.isEmpty() ? new Document() : Filters.and(filters);
+
+            return collection.countDocuments(finalFilter);
+        } catch (Exception e) {
+            System.err.println("Error counting stock history: " + e.getMessage());
+            e.printStackTrace();
+            return 0; // Return 0 on error
+        }
+    }
+
 
 }

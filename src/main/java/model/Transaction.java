@@ -37,11 +37,21 @@ public class Transaction {
     public Transaction(JSONObject json) {
         this.transactionId = JsonUtils.getObjectId(json, "_id");
         this.quantity = JsonUtils.getBigDecimal(json, "quantity");
-        this.priceAtTransaction = new BigDecimal(json.getString("priceAtTransaction"));
-        this.createdAt = LocalDateTime.parse(json.getString("createdAt"));
-        this.updatedAt = LocalDateTime.parse(json.getString("updatedAt"));
+        this.priceAtTransaction = JsonUtils.getBigDecimal(json, "priceAtTransaction"); // new BigDecimal(json.getString("priceAtTransaction"));
+        Object createdAtDateObj = json.opt("createdAt");
+        this.createdAt = (createdAtDateObj instanceof LocalDateTime) ?
+                (LocalDateTime) createdAtDateObj :
+                (createdAtDateObj instanceof String) ?
+                        LocalDateTime.parse((String) createdAtDateObj) :
+                        null;
+        Object updatedAtDateObj = json.opt("updatedAt");
+        this.updatedAt = (updatedAtDateObj instanceof LocalDateTime) ?
+                (LocalDateTime) updatedAtDateObj :
+                (updatedAtDateObj instanceof String) ?
+                        LocalDateTime.parse((String) updatedAtDateObj) :
+                        null;
         this.stockId = json.getString("stockId");
-        this.walletId = new ObjectId(json.getString("walletId"));
+        this.walletId = JsonUtils.getObjectId(json, "walletId");
         this.transactionTypesId = json.getString("transactionTypesId");
         this.transactionStatusId = json.getString("transactionStatusId");
     }

@@ -2,6 +2,7 @@ package service;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -24,11 +25,12 @@ import util.RedisCacheService;
 public class crudStockService {
     private final StockDAO stockDAO;
     private final MongoDatabase database;
-
+    private final StockPriceHistoryDAO historyDao;
 
     public crudStockService(MongoDatabase database) {
         this.database = database;
         this.stockDAO = new StockDAO(database);
+        this.historyDao = new StockPriceHistoryDAO(database);
     }
 
     /**
@@ -448,5 +450,50 @@ public class crudStockService {
         }
     }
 
+    public JSONObject getStockHistory(String ticker, LocalDate startDate, LocalDate endDate, int page, int pageSize) {
+        try {
+            // Convert LocalDate to LocalDateTime for DB query (start of day, end of day)
+            LocalDateTime startDateTime = (startDate != null) ? startDate.atStartOfDay() : null;
+            // For end date, include the whole day
+            LocalDateTime endDateTime = (endDate != null) ? endDate.atTime(LocalTime.MAX) : null;
+
+            // Calculate skip value for pagination
+            int skip = (page - 1) * pageSize;
+
+            // Call DAO methods (to be created)
+            List<StockPriceHistory> historyData = historyDao.findByTickerAndDateRangePaginated(ticker, startDateTime, endDateTime, skip, pageSize);
+            long totalRecords = historyDao.countByTickerAndDateRange(ticker, startDateTime, endDateTime);
+
+            if (historyData == null || historyData.isEmpty()) {
+                return null; // Or return structure indicating no data
+            }
+
+            // Build response JSON
+            JSONObject result = new JSONObject();
+            JSONArray dataArray = new JSONArray();
+            for (StockPriceHistory sph : historyData) {
+                dataArray.put(sph.toJson()); // Assuming StockPriceHistory has toJson()
+            }
+
+            long totalPages = (long) Math.ceil((double) totalRecords / pageSize);
+
+            result.put("data", dataArray);
+            result.put("pagination", new JSONObject()
+                    .put("currentPage", page)
+                    .put("pageSize", pageSize)
+                    .put("totalRecords", totalRecords)
+                    .put("totalPages", totalPages)
+            );
+
+            // Consider adding caching here for common queries
+
+            return result;
+
+        } catch (Exception e) {
+            System.err.println("Error getting stock history from service: " + e.getMessage());
+            e.printStackTrace();
+            return null; // Indicate error
+        }
+    }
 
 }

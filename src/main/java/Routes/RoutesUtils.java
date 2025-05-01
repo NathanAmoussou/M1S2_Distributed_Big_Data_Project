@@ -1,6 +1,7 @@
 package Routes;
 
 import com.sun.net.httpserver.HttpExchange;
+import org.json.JSONObject;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -42,5 +43,11 @@ public class RoutesUtils {
         try (OutputStream os = exchange.getResponseBody()) {
             os.write(bytes);
         }
+    }
+
+    public static void sendErrorResponse(HttpExchange exchange, int statusCode, String errorMessage) throws IOException {
+        JSONObject errorJson = new JSONObject();
+        errorJson.put("error", errorMessage);
+        sendResponse(exchange, statusCode, errorJson.toString());
     }
 }

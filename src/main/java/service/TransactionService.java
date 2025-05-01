@@ -9,9 +9,13 @@ import model.Holding;
 import model.Stock;
 import model.Transaction;
 import model.Wallet;
+import org.bson.types.ObjectId;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.List;
 
 public class TransactionService {
     private final InvestorDAO investorDAO;
@@ -168,5 +172,19 @@ public class TransactionService {
 //        }
 //    }
 
+    /**
+     * Retrieves transactions for a specific wallet optionally filtered by date.
+     */
+    public List<Transaction> getTransactionsForWallet(String walletIdStr, LocalDate startDate, LocalDate endDate) {
+        if (!ObjectId.isValid(walletIdStr)) {
+            throw new IllegalArgumentException("Invalid wallet ID format: " + walletIdStr);
+        }
+        ObjectId walletId = new ObjectId(walletIdStr);
+
+        LocalDateTime startDateTime = (startDate != null) ? startDate.atStartOfDay() : null;
+        LocalDateTime endDateTime = (endDate != null) ? endDate.atTime(LocalTime.MAX) : null;
+
+        return transactionDAO.findByWalletIdAndDateRange(walletId, startDateTime, endDateTime);
+    }
 
 }
