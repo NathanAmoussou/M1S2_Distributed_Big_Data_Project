@@ -5,8 +5,8 @@ import Routes.RoutesUtils;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import org.json.JSONObject;
-import service.TransactionService;
-import model.Transaction; // Assuming this exists and has toJson()
+import Services.TransactionService;
+import Models.Transaction; // Assuming this exists and has toJson()
 
 import java.io.IOException;
 import java.math.BigDecimal;

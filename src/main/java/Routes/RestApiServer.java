@@ -15,10 +15,10 @@ import Routes.Handlers.WalletsHandler;   // New
 import Routes.Handlers.StocksHandler;    // New
 
 // Keep service imports
-import service.HoldingService;
-import service.InvestorService;
-import service.TransactionService;
-import service.crudStockService;
+import Services.HoldingService;
+import Services.InvestorService;
+import Services.TransactionService;
+import Services.crudStockService;
 
 public class RestApiServer {
     private final HttpServer server;
@@ -38,8 +38,6 @@ public class RestApiServer {
         holdingService = new HoldingService(database); // WalletHandler will need this
 
         server = HttpServer.create(new InetSocketAddress(port), 0);
-
-        // --- Register Consolidated Handlers ---
 
         // Handles: GET /investors, POST /investors, GET /investors/{id}, GET /investors/{id}/wallets
         server.createContext("/investors", new InvestorsHandler(investorService));
@@ -61,18 +59,6 @@ public class RestApiServer {
     public void start() {
         server.start();
         System.out.println("REST API Server started on port " + server.getAddress().getPort());
-        System.out.println("Available Routes:");
-        System.out.println("  /investors (GET, POST)");
-        System.out.println("  /investors/{investorId} (GET)");
-        System.out.println("  /investors/{investorId}/wallets (GET)");
-        System.out.println("  /wallets/{walletId}/funds (POST)");
-        System.out.println("  /wallets/{walletId}/holdings (GET)");
-        System.out.println("  /wallets/{walletId}/transactions (GET)");
-        System.out.println("  /stocks (GET, POST)");
-        System.out.println("  /stocks/{ticker} (GET)");
-        System.out.println("  /stocks/{ticker}/history (GET)");
-        System.out.println("  /transactions/buy (POST)");
-        System.out.println("  /transactions/sell (POST)");
     }
 
     // Optional: Method to stop the server gracefully

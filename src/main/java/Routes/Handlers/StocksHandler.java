@@ -3,12 +3,12 @@ package Routes.Handlers;
 import Routes.RoutesUtils;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
-import model.Stock; // Assuming Stock model exists and has toJson()
+import Models.Stock; // Assuming Stock model exists and has toJson()
 // StockPriceHistory might not be needed directly if service returns JSONObject
 // import model.StockPriceHistory;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import service.crudStockService; // Corrected service name
+import Services.crudStockService; // Corrected service name
 
 import java.io.IOException;
 import java.time.LocalDate;
@@ -104,9 +104,6 @@ public class StocksHandler implements HttpHandler {
             // Get only tickers (as before)
             List<String> tickers = stockService.getAllStockTickers();
 
-            // Alternative: Get basic info for all stocks?
-            // List<Stock> stocks = stockService.getAllStocksBasicInfo(); // If this method exists
-
             if (tickers != null) {
                 JSONArray tickersArray = new JSONArray(tickers);
                 responseJson.put("assets", tickersArray); // Keep 'assets' key for compatibility? Or change to 'tickers'?
@@ -123,7 +120,6 @@ public class StocksHandler implements HttpHandler {
     }
 
     private void handleAddStock(HttpExchange exchange) throws IOException {
-        // Logic from old StocksHandler - POST /stocks
         try {
             String body = RoutesUtils.readRequestBody(exchange);
             JSONObject requestJson = new JSONObject(body);
@@ -136,7 +132,6 @@ public class StocksHandler implements HttpHandler {
                 return;
             }
 
-            // Call the service method which handles API fetch and DB save
             Stock createdStock = stockService.createStock(ticker, market);
 
             if (createdStock != null) {
@@ -162,7 +157,7 @@ public class StocksHandler implements HttpHandler {
     }
 
     private void handleGetStockDetails(HttpExchange exchange, String ticker) throws IOException {
-        // Optional: Get details for a single stock Ticker might include market (e.g., "MSFT" or "MC.PA")
+        //  Get details for a single stock Ticker might include market (e.g., "MSFT" or "MC.PA")
         try {
             Stock stock = stockService.readStock(ticker); // Assumes readStock takes the full ticker directly
 
@@ -180,7 +175,6 @@ public class StocksHandler implements HttpHandler {
 
 
     private void handleGetStockHistory(HttpExchange exchange, String ticker) throws IOException {
-        // Logic from old StockHistoryHandler
         try {
             // Extract Query Parameters
             Map<String, String> params = RoutesUtils.parseQueryParams(exchange.getRequestURI().getQuery());
@@ -201,7 +195,7 @@ public class StocksHandler implements HttpHandler {
             // Basic validation for pagination params
             if (page < 1) page = 1;
             if (pageSize < 1) pageSize = 1;
-            if (pageSize > 1000) pageSize = 1000; // Set a reasonable max limit
+            if (pageSize > 1000) pageSize = 1000; // reasonable max limit
 
             LocalDate startDate = null;
             LocalDate endDate = null;

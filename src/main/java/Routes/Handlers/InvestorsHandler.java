@@ -3,12 +3,12 @@ package Routes.Handlers;
 import Routes.RoutesUtils;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
-import model.Investor;
-import model.Wallet;
+import Models.Investor;
+import Models.Wallet;
 import org.bson.types.ObjectId;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import service.InvestorService;
+import Services.InvestorService;
 
 import java.io.IOException;
 import java.util.List;
@@ -82,7 +82,6 @@ public class InvestorsHandler implements HttpHandler {
     // --- Private handler methods ---
 
     private void getAllInvestors(HttpExchange exchange) throws IOException {
-        // Logic from old InvestorsHandler GET method
         JSONObject responseJson = new JSONObject();
         List<Investor> investors = investorService.getAllInvestors();
         JSONArray arr = new JSONArray();
@@ -94,7 +93,6 @@ public class InvestorsHandler implements HttpHandler {
     }
 
     private void createInvestor(HttpExchange exchange) throws IOException {
-        // Logic from old InvestorsHandler POST method
         JSONObject responseJson = new JSONObject();
         try {
             String body = RoutesUtils.readRequestBody(exchange);
@@ -114,7 +112,6 @@ public class InvestorsHandler implements HttpHandler {
     }
 
     private void getInvestorById(HttpExchange exchange, String investorIdStr) throws IOException {
-        // New Functionality (Example)
         JSONObject responseJson = new JSONObject();
         try {
             if (!ObjectId.isValid(investorIdStr)) {
@@ -134,7 +131,6 @@ public class InvestorsHandler implements HttpHandler {
 
 
     private void getInvestorWallets(HttpExchange exchange, String investorIdStr) throws IOException {
-        // Logic from old InvestorWalletsHandler
         JSONObject responseJson = new JSONObject();
         try {
             if (!ObjectId.isValid(investorIdStr)) {

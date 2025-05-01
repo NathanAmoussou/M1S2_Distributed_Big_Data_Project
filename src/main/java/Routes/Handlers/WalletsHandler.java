@@ -3,15 +3,15 @@ package Routes.Handlers;
 import Routes.RoutesUtils;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
-import model.Holding;
-import model.Transaction;
-import model.Wallet; // Assuming Wallet model exists and has toJson()
+import Models.Holding;
+import Models.Transaction;
+import Models.Wallet;
 import org.bson.types.ObjectId;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import service.HoldingService;
-import service.InvestorService; // Needed to find/update wallets
-import service.TransactionService;
+import Services.HoldingService;
+import Services.InvestorService;
+import Services.TransactionService;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -87,7 +87,7 @@ public class WalletsHandler implements HttpHandler {
                 return;
             }
 
-            // Optional: Handle getting basic wallet info
+            // Handle getting basic wallet info
             matcher = WALLET_ID_PATTERN.matcher(path);
             if (matcher.matches()) {
                 String walletId = matcher.group(1);
@@ -129,7 +129,7 @@ public class WalletsHandler implements HttpHandler {
                 return;
             }
 
-            // Call service to add funds (assuming this method exists and returns the updated wallet)
+            // Call service to add funds
             Wallet updatedWallet = investorService.addFundsToWallet(walletIdStr, amount);
 
             if (updatedWallet != null) {
@@ -156,7 +156,6 @@ public class WalletsHandler implements HttpHandler {
 
     private void handleGetHoldings(HttpExchange exchange, String walletIdStr) throws IOException {
 //        System.out.println("DEBUG GetHoldings: " + walletIdStr);
-        // Logic from old HoldingsHandler
         if (!ObjectId.isValid(walletIdStr)) {
             RoutesUtils.sendErrorResponse(exchange, 400, "Invalid Wallet ID format.");
             return;
@@ -167,17 +166,14 @@ public class WalletsHandler implements HttpHandler {
             JSONArray holdingsArray = new JSONArray();
 
             // Check if holdings list is null (could indicate wallet not found) vs empty (wallet found, no holdings)
-            // Adjust based on your service's behavior
             if (holdings == null) {
-                // Option 1: Assume wallet not found if service returns null
+                // we assume wallet not found if service returns null
                 RoutesUtils.sendErrorResponse(exchange, 404, "Wallet not found or error retrieving holdings for ID: " + walletIdStr);
-                // Option 2: Assume wallet exists but maybe an error occurred (less likely for a GET)
-                // RoutesUtils.sendErrorResponse(exchange, 500, "Error retrieving holdings for wallet ID: " + walletIdStr);
                 return;
             }
 
             for (Holding holding : holdings) {
-                holdingsArray.put(holding.toJson()); // Use existing toJson method
+                holdingsArray.put(holding.toJson());
             }
 
             JSONObject responseJson = new JSONObject();
@@ -247,9 +243,6 @@ public class WalletsHandler implements HttpHandler {
             return;
         }
         try {
-            // You need a service method to find a wallet directly by its ID.
-            // This might search across all investors or look in a dedicated 'wallets' collection.
-            // Let's assume: Wallet wallet = investorService.findWalletById(walletIdStr);
             Wallet wallet = investorService.getWalletById(walletIdStr); // Assuming this method exists
 
             if (wallet != null) {

@@ -8,11 +8,11 @@ import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoDatabase;
 
-import dao.StockDAO;
-import dao.StockPriceHistoryDAO;
-import model.Stock;
-import model.StockPriceHistory;
-import service.crudStockService;
+import DAO.StockDAO;
+import DAO.StockPriceHistoryDAO;
+import Models.Stock;
+import Models.StockPriceHistory;
+import Services.crudStockService;
 
 public class Application {
     public static void main(String[] args) {
@@ -24,8 +24,8 @@ public class Application {
                 break;
             }
         }
-        config.AppConfig.setEnabled(enableCache);
-        System.out.println("Mise en cache Redis : " + config.AppConfig.isEnabled());
+        Config.AppConfig.setEnabled(enableCache);
+        System.out.println("Mise en cache Redis : " + Config.AppConfig.isEnabled());
 
 
 
