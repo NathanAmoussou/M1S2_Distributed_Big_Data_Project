@@ -4,46 +4,87 @@ import Routes.RoutesUtils;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import model.Investor;
+import model.Wallet;
+import org.bson.types.ObjectId;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import service.InvestorService;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-public class InvestorsHandler implements HttpHandler {
+public class InvestorHandler implements HttpHandler {
 
-    private final InvestorService investorService; // Injected service
+    private final InvestorService investorService;
+    // Pattern to match /investors/{investorId}
+    private static final Pattern INVESTOR_ID_PATTERN = Pattern.compile("^/investors/([a-fA-F0-9]{24})$");
+    // Pattern to match /investors/{investorId}/wallets
+    private static final Pattern INVESTOR_WALLETS_PATTERN = Pattern.compile("^/investors/([a-fA-F0-9]{24})/wallets$");
 
-    public InvestorsHandler(InvestorService investorService) {
+    public InvestorHandler(InvestorService investorService) {
         this.investorService = investorService;
     }
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
+        String path = exchange.getRequestURI().getPath();
         String method = exchange.getRequestMethod();
 
-        if ("GET".equalsIgnoreCase(method)) {
-            this.get(exchange);
-        } else if ("POST".equalsIgnoreCase(method)) {
-            this.post(exchange);
-        } else if ("PUT".equalsIgnoreCase(method)) {
-            this.put(exchange);
-        } else if ("DELETE".equalsIgnoreCase(method)) {
-            this.delete(exchange);
-        } else {
-            JSONObject responseJson = new JSONObject();
-            responseJson.put("error", "Méthode non autorisée");
-            RoutesUtils.sendResponse(exchange, 405, responseJson.toString());
+        try {
+            // Match specific investor: /investors/{investorId}
+            Matcher idMatcher = INVESTOR_ID_PATTERN.matcher(path);
+            if (idMatcher.matches()) {
+                String investorId = idMatcher.group(1);
+                if ("GET".equalsIgnoreCase(method)) {
+                    getInvestorById(exchange, investorId); // Implement this method
+                } else {
+                    RoutesUtils.sendErrorResponse(exchange, 405, "Method Not Allowed for " + path);
+                }
+                return; // Handled
+            }
+
+            // Match investor wallets: /investors/{investorId}/wallets
+            Matcher walletsMatcher = INVESTOR_WALLETS_PATTERN.matcher(path);
+            if (walletsMatcher.matches()) {
+                String investorId = walletsMatcher.group(1);
+                if ("GET".equalsIgnoreCase(method)) {
+                    getInvestorWallets(exchange, investorId); // Move logic from old InvestorWalletsHandler
+                } else {
+                    RoutesUtils.sendErrorResponse(exchange, 405, "Method Not Allowed for " + path);
+                }
+                return; // Handled
+            }
+
+            // Match base route: /investors
+            if (path.equals("/investors")) {
+                if ("GET".equalsIgnoreCase(method)) {
+                    getAllInvestors(exchange); // Move logic from old InvestorsHandler
+                } else if ("POST".equalsIgnoreCase(method)) {
+                    createInvestor(exchange); // Move logic from old InvestorsHandler
+                } else {
+                    RoutesUtils.sendErrorResponse(exchange, 405, "Method Not Allowed for " + path);
+                }
+                return; // Handled
+            }
+
+            // If none of the patterns matched
+            RoutesUtils.sendErrorResponse(exchange, 404, "Not Found: " + path);
+
+        } catch (Exception e) {
+            System.err.println("Error processing request " + method + " " + path + ": " + e.getMessage());
+            e.printStackTrace();
+            RoutesUtils.sendErrorResponse(exchange, 500, "Internal Server Error: " + e.getMessage());
         }
     }
 
-    private void get(HttpExchange exchange) throws IOException {
-        JSONObject responseJson = new JSONObject();
-        System.out.println("GET all investors");
-        List<Investor> investors = investorService.getAllInvestors(); // Using the injected service
-        System.out.println("Investors retrieved: " + investors);
+    // --- Private handler methods ---
 
+    private void getAllInvestors(HttpExchange exchange) throws IOException {
+        // Logic from old InvestorsHandler GET method
+        JSONObject responseJson = new JSONObject();
+        List<Investor> investors = investorService.getAllInvestors();
         JSONArray arr = new JSONArray();
         for (Investor inv : investors) {
             arr.put(inv.toJson());
@@ -52,33 +93,72 @@ public class InvestorsHandler implements HttpHandler {
         RoutesUtils.sendResponse(exchange, 200, responseJson.toString());
     }
 
-    private void post(HttpExchange exchange) throws IOException {
+    private void createInvestor(HttpExchange exchange) throws IOException {
+        // Logic from old InvestorsHandler POST method
         JSONObject responseJson = new JSONObject();
-        String body = RoutesUtils.readRequestBody(exchange);
-        JSONObject requestJson = new JSONObject(body);
         try {
-            // Creating the investor from the JSON
-            Investor investor = new Investor(requestJson);
-            // Using the injected service to create an investor
+            String body = RoutesUtils.readRequestBody(exchange);
+            JSONObject requestJson = new JSONObject(body);
+            Investor investor = new Investor(requestJson); // Assuming constructor handles validation
             Investor createdInvestor = investorService.createInvestor(investor);
-            RoutesUtils.sendResponse(exchange, 201, createdInvestor.toString());
+            if (createdInvestor != null) {
+                RoutesUtils.sendResponse(exchange, 201, createdInvestor.toJson().toString()); // Use toJson
+            } else {
+                RoutesUtils.sendErrorResponse(exchange, 500, "Failed to create investor");
+            }
+        } catch (org.json.JSONException e) {
+            RoutesUtils.sendErrorResponse(exchange, 400, "Invalid JSON format: " + e.getMessage());
         } catch (Exception e) {
-            responseJson.put("error", "Error while creating the investor profile: " + e.getMessage());
-            RoutesUtils.sendResponse(exchange, 500, responseJson.toString());
+            RoutesUtils.sendErrorResponse(exchange, 500, "Error creating investor: " + e.getMessage());
         }
     }
 
-    private void put(HttpExchange exchange) throws IOException {
+    private void getInvestorById(HttpExchange exchange, String investorIdStr) throws IOException {
+        // New Functionality (Example)
         JSONObject responseJson = new JSONObject();
-        // Handle PUT request logic (update investor or other functionality)
-        responseJson.put("message", "PUT method not implemented yet");
-        RoutesUtils.sendResponse(exchange, 200, responseJson.toString());
+        try {
+            if (!ObjectId.isValid(investorIdStr)) {
+                RoutesUtils.sendErrorResponse(exchange, 400, "Invalid Investor ID format");
+                return;
+            }
+            Investor investor = investorService.getInvestor(investorIdStr); // Assumes getInvestor exists
+            if (investor != null) {
+                RoutesUtils.sendResponse(exchange, 200, investor.toJson().toString());
+            } else {
+                RoutesUtils.sendErrorResponse(exchange, 404, "Investor not found with ID: " + investorIdStr);
+            }
+        } catch (Exception e) {
+            RoutesUtils.sendErrorResponse(exchange, 500, "Internal server error: " + e.getMessage());
+        }
     }
 
-    private void delete(HttpExchange exchange) throws IOException {
+
+    private void getInvestorWallets(HttpExchange exchange, String investorIdStr) throws IOException {
+        // Logic from old InvestorWalletsHandler
         JSONObject responseJson = new JSONObject();
-        // Handle DELETE request logic (delete investor or other functionality)
-        responseJson.put("message", "DELETE method not implemented yet");
-        RoutesUtils.sendResponse(exchange, 200, responseJson.toString());
+        try {
+            if (!ObjectId.isValid(investorIdStr)) {
+                RoutesUtils.sendErrorResponse(exchange, 400, "Invalid Investor ID format");
+                return;
+            }
+            Investor investor = investorService.getInvestor(investorIdStr);
+
+            if (investor != null) {
+                List<Wallet> wallets = investor.getWallets(); // Assuming getWallets exists
+                JSONArray walletsArray = new JSONArray();
+                if (wallets != null) {
+                    for (Wallet wallet : wallets) {
+                        walletsArray.put(wallet.toJson());
+                    }
+                }
+                responseJson.put("wallets", walletsArray);
+                RoutesUtils.sendResponse(exchange, 200, responseJson.toString());
+            } else {
+                RoutesUtils.sendErrorResponse(exchange, 404, "Investor not found with ID: " + investorIdStr);
+            }
+
+        } catch (Exception e) {
+            RoutesUtils.sendErrorResponse(exchange, 500, "Internal server error: " + e.getMessage());
+        }
     }
 }
