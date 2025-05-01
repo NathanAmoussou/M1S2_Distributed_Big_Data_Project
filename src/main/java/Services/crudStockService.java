@@ -9,6 +9,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import CacheDAO.StockCacheDAO;
+import CacheDAO.StockHistoryCacheDAO;
 import Config.AppConfig;
 import DAO.StockPriceHistoryDAO;
 import Models.StockPriceHistory;
@@ -25,13 +26,14 @@ public class crudStockService {
     private final StockDAO stockDAO;
     private final MongoDatabase database;
     private final StockPriceHistoryDAO historyDao;    private final StockCacheDAO stockCacheDAO;
-
+    private final StockHistoryCacheDAO historyCacheDAO;
 
     public crudStockService(MongoDatabase database) {
         this.database = database;
         this.stockDAO = new StockDAO(database);
         this.historyDao = new StockPriceHistoryDAO(database);
         this.stockCacheDAO = new StockCacheDAO();
+        this.historyCacheDAO = new StockHistoryCacheDAO();
 
     }
 
@@ -91,11 +93,29 @@ public class crudStockService {
 
             // Now fetch historical data from 2018 to current year in yearly chunks
             fetchHistoricalData(stockTicker, market, dbStockTicker);
+
+            if (AppConfig.isEnabled()) {
+                try {
+                    System.out.println("Populating 30-day history cache for new stock: " + dbStockTicker);
+                    List<StockPriceHistory> last30Days = historyDao.findLastNDaysByTicker(dbStockTicker, 30);
+                    if (last30Days != null && !last30Days.isEmpty()) {
+                        historyCacheDAO.save(dbStockTicker, last30Days);
+                    } else {
+                        System.out.println("No recent history found to populate cache for: " + dbStockTicker);
+                    }
+                } catch (Exception e) {
+                    System.err.println("Error populating 30-day history cache for " + dbStockTicker + ": " + e.getMessage());
+                }
+            }
             
             return stock;
         } catch (Exception e) {
             System.err.println("Error creating stock: " + e.getMessage());
             e.printStackTrace();
+            if (AppConfig.isEnabled()) {
+                stockCacheDAO.delete(dbStockTicker); // Invalidation par sécurité
+                historyCacheDAO.invalidate(dbStockTicker);
+            }
             return null;
         }
     }
@@ -351,6 +371,7 @@ public class crudStockService {
                 System.out.println("Stock with ticker " + stockTicker + " not found");
                 if (AppConfig.isEnabled()) {
                     stockCacheDAO.delete(stockTicker);
+                    historyCacheDAO.invalidate(stockTicker);
                 }
                 return false;
             }
@@ -362,12 +383,19 @@ public class crudStockService {
                 stockCacheDAO.delete(stockTicker);
                 stockCacheDAO.invalidateAll();
                 stockCacheDAO.invalidateAllTickers();
+                historyCacheDAO.invalidate(stockTicker);
                 System.out.println("Stock [" + stockTicker + "] deleted in cache and lists invalidated.");
             }
             return true;
         } catch (Exception e) {
             System.err.println("Error deleting stock: " + e.getMessage());
             e.printStackTrace();
+            if (AppConfig.isEnabled()) {
+                stockCacheDAO.delete(stockTicker);
+                stockCacheDAO.invalidateAll();
+                stockCacheDAO.invalidateAllTickers();
+                historyCacheDAO.invalidate(stockTicker);
+            }
             return false;
         }
     }

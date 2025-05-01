@@ -2,7 +2,9 @@ package DAO;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import com.mongodb.client.model.Filters;
@@ -251,6 +253,40 @@ public class StockPriceHistoryDAO implements GenericDAO<StockPriceHistory> {
             System.err.println("Error finding last stock history record: " + e.getMessage());
             e.printStackTrace();
             return null;
+        }
+    }
+
+    public List<StockPriceHistory> findLastNDaysByTicker(String ticker, int days) {
+        if (days <= 0) {
+            return Collections.emptyList();
+        }
+        List<StockPriceHistory> results = new ArrayList<>();
+        try {
+            LocalDateTime endDateTime = LocalDateTime.now();
+            LocalDateTime startDateTime = endDateTime.minusDays(days).with(LocalTime.MIN);
+
+            Bson filter = Filters.and(
+                    Filters.eq("stockPriceHistoryTicker", ticker),
+                    Filters.gte("dateTime", startDateTime),
+                    Filters.lte("dateTime", endDateTime)
+            );
+
+            collection.find(filter)
+                    .sort(Sorts.ascending("dateTime"))
+                    .forEach(doc -> {
+                        StockPriceHistory sph = documentToStockPriceHistory(doc);
+                        if (sph != null) {
+                            results.add(sph);
+                        }
+                    });
+
+            System.out.println("Fetched " + results.size() + " records from DB for last " + days + " days for ticker: " + ticker);
+            return results;
+
+        } catch (Exception e) {
+            System.err.println("Error finding last " + days + " days stock history for ticker " + ticker + ": " + e.getMessage());
+            e.printStackTrace();
+            return Collections.emptyList();
         }
     }
 

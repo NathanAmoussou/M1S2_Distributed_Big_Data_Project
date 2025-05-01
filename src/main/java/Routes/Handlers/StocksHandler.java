@@ -38,6 +38,9 @@ public class StocksHandler implements HttpHandler {
     // /evolution of a stock
     private static final Pattern EVOLUTION_PATTERN = Pattern.compile("^/stocks/([a-zA-Z0-9.-]+)/evolution$");
 
+
+    private static final Pattern HISTORY_30D_PATTERN = Pattern.compile("^/stocks/([a-zA-Z0-9.-]+)/history/30d$");
+
     public StocksHandler(crudStockService stockService, StockHistoryService stockHistoryService) {
         this.stockService = stockService;
         this.stockHistoryService = stockHistoryService;
@@ -52,6 +55,17 @@ public class StocksHandler implements HttpHandler {
 
         try {
             Matcher matcher;
+
+            matcher = HISTORY_30D_PATTERN.matcher(path);
+            if (matcher.matches()) {
+                String ticker = URLDecoder.decode(matcher.group(1), StandardCharsets.UTF_8);
+                if ("GET".equalsIgnoreCase(method)) {
+                    handleGetStockHistory30d(exchange, ticker); 
+                } else {
+                    RoutesUtils.sendErrorResponse(exchange, 405, "Method Not Allowed for " + path);
+                }
+                return;
+            }
 
             matcher = EVOLUTION_PATTERN.matcher(path);
             if (matcher.matches()) {
@@ -307,4 +321,33 @@ public class StocksHandler implements HttpHandler {
             RoutesUtils.sendErrorResponse(exchange, 500, "Internal server error while calculating stock evolution.");
         }
     }
+
+    private void handleGetStockHistory30d(HttpExchange exchange, String ticker) throws IOException {
+        try {
+            List<StockPriceHistory> historyList = stockHistoryService.getHistoryLast30Days(ticker);
+
+            if (historyList == null || historyList.isEmpty()) {
+                RoutesUtils.sendErrorResponse(exchange, 404, "No recent history data (last 30 days) found for stock: " + ticker);
+                return;
+            }
+
+            JSONArray dataArray = new JSONArray();
+            for (StockPriceHistory sph : historyList) {
+                dataArray.put(sph.toJson());
+            }
+
+            JSONObject responseJson = new JSONObject();
+            responseJson.put("ticker", ticker);
+            responseJson.put("days", 30);
+            responseJson.put("history", dataArray);
+
+            RoutesUtils.sendResponse(exchange, 200, responseJson.toString());
+
+        } catch (Exception e) {
+            System.err.println("Error getting 30d history for stock " + ticker + ": " + e.getMessage());
+            e.printStackTrace();
+            RoutesUtils.sendErrorResponse(exchange, 500, "Internal server error while retrieving recent stock history.");
+        }
+    }
+
 }

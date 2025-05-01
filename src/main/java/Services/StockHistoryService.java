@@ -1,5 +1,6 @@
 package Services;
 
+import CacheDAO.StockHistoryCacheDAO;
 import DAO.StockPriceHistoryDAO;
 import Models.StockPriceHistory;
 import com.mongodb.client.MongoDatabase;
@@ -7,13 +8,18 @@ import org.json.JSONObject;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 
 public class StockHistoryService {
 
     private final StockPriceHistoryDAO historyDao;
+    private final StockHistoryCacheDAO historyCacheDAO;
 
     public StockHistoryService(MongoDatabase database) {
         this.historyDao = new StockPriceHistoryDAO(database);
+        this.historyCacheDAO = new StockHistoryCacheDAO();
     }
 
     public JSONObject getStockPercentageChange(String ticker, LocalDateTime startDateTime, LocalDateTime endDateTime) {
@@ -60,4 +66,24 @@ public class StockHistoryService {
         return result;
     }
 
+    public List<StockPriceHistory> getHistoryLast30Days(String ticker) {
+        if (ticker == null || ticker.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        if (Config.AppConfig.isEnabled()) {
+            Optional<List<StockPriceHistory>> cachedHistory = historyCacheDAO.findByTicker(ticker);
+            if (cachedHistory.isPresent()) {
+                return cachedHistory.get();
+            }
+        }
+
+        List<StockPriceHistory> dbHistory = historyDao.findLastNDaysByTicker(ticker, 30);
+
+        if (dbHistory != null && !dbHistory.isEmpty() && Config.AppConfig.isEnabled()) {
+            historyCacheDAO.save(ticker, dbHistory);
+        }
+
+        return dbHistory == null ? Collections.emptyList() : dbHistory;
+    }
 }

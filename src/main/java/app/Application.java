@@ -1,8 +1,16 @@
 package app;
 
 import java.io.IOException;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
+import CacheDAO.StockHistoryCacheDAO;
 import Routes.RestApiServer;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
@@ -15,6 +23,8 @@ import Models.StockPriceHistory;
 import Services.crudStockService;
 
 public class Application {
+    private static ScheduledExecutorService scheduler;
+
     public static void main(String[] args) {
 
         boolean enableCache = false;
@@ -40,6 +50,7 @@ public class Application {
         // Initialiser les DAO
         StockDAO stockDao = new StockDAO(database);
         StockPriceHistoryDAO historyDao = new StockPriceHistoryDAO(database);
+        crudStockService stockService = new crudStockService(database);
 
         // Test regular CRUD operations
 //        System.out.println("\n---------- Testing Stock CRUD Operations ----------");
@@ -58,6 +69,11 @@ public class Application {
 
         } catch (IOException e) {
             throw new RuntimeException(e);
+        }
+        if (Config.AppConfig.isEnabled()) {
+            startDailyHistoryCacheRefresh(stockService, historyDao);
+        } else {
+            System.out.println("Daily history cache refresh task DISABLED because cache is disabled.");
         }
 
 
@@ -176,5 +192,65 @@ public class Application {
             e.printStackTrace();
 
         }
+    }
+
+    private static void startDailyHistoryCacheRefresh(crudStockService stockService, StockPriceHistoryDAO historyDao) {
+        scheduler = Executors.newSingleThreadScheduledExecutor();
+
+        Runnable refreshTask = () -> {
+            System.out.println(LocalDateTime.now() + " - Starting daily 30-day history cache refresh task...");
+            try {
+                List<String> tickers = stockService.getAllStockTickers();
+                if (tickers == null || tickers.isEmpty()) {
+                    System.out.println("No tickers found to refresh cache.");
+                    return;
+                }
+                System.out.println("Found " + tickers.size() + " tickers to process for cache refresh.");
+
+                //todo TMP
+                StockHistoryCacheDAO historyCacheDAO = new StockHistoryCacheDAO();
+
+                int refreshedCount = 0;
+                int errorCount = 0;
+                for (String ticker : tickers) {
+                    try {
+                        List<StockPriceHistory> last30Days = historyDao.findLastNDaysByTicker(ticker, 30);
+                        if (last30Days != null) { // findLastNDaysByTicker retourne liste vide si non trouvé
+                            historyCacheDAO.save(ticker, last30Days);
+                            refreshedCount++;
+                        } else {
+                            System.out.println("No recent history found for ticker: " + ticker + " during refresh.");
+                            historyCacheDAO.invalidate(ticker);
+                        }
+                        Thread.sleep(100); // 50ms pause
+                    } catch (Exception e) {
+                        System.err.println("Error refreshing cache for ticker " + ticker + ": " + e.getMessage());
+                        errorCount++;
+                    }
+                }
+                System.out.println(LocalDateTime.now() + " - Daily history cache refresh task finished. Refreshed: " + refreshedCount + ", Errors: " + errorCount);
+
+            } catch (Throwable t) {
+                System.err.println(LocalDateTime.now() + " - CRITICAL ERROR in daily history cache refresh task: " + t.getMessage());
+                t.printStackTrace();
+            }
+        };
+
+        ZonedDateTime now = ZonedDateTime.now(ZoneId.systemDefault());
+        ZonedDateTime nextRun = now.withHour(2).withMinute(0).withSecond(0);
+        if (now.isAfter(nextRun)) {
+            nextRun = nextRun.plusDays(1);
+        }
+
+        Duration initialDelay = Duration.between(now, nextRun);
+        long initialDelaySeconds = initialDelay.getSeconds();
+        long periodSeconds = TimeUnit.HOURS.toSeconds(1);
+
+        System.out.println("Scheduling daily history cache refresh. Next run at: " + nextRun);
+        System.out.println("Initial delay: " + initialDelaySeconds + " seconds. Period: " + periodSeconds + " seconds.");
+
+        scheduler.scheduleAtFixedRate(refreshTask, initialDelaySeconds, periodSeconds, TimeUnit.SECONDS);
+
+        scheduler.schedule(refreshTask, 1, TimeUnit.MINUTES); // Ex: Exécuter dans 1 minute
     }
 }
