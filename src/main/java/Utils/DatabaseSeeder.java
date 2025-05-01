@@ -1,4 +1,4 @@
-package util;
+package Utils;
 
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
@@ -9,10 +9,10 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.stream.Collectors;
-import model.Investor;
+import Models.Investor;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import service.InvestorService;
+import Services.InvestorService;
 
 /**
  * Utility class to seed the MongoDB database with investor data from a JSON file.
