@@ -1,0 +1,3 @@
+- [x] Créer le `.json` pour les `investors`.
+- [ ] Intégrer le `.json` pour les `investors` dans le backend. Créer un script Java.
+- [ ] « Botter » des intéractions avec des appels HTTP depuis le Postman (permettra aussi de tester toute la chaîne). Créer un deuxième script Java.
