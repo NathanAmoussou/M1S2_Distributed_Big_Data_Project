@@ -2,6 +2,7 @@ package DAO;
 
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.IndexOptions;
 import com.mongodb.client.model.Indexes;
 import Models.Wallet;
@@ -9,6 +10,8 @@ import org.bson.Document;
 import Models.Investor;
 import org.bson.types.ObjectId;
 import org.json.JSONObject;
+
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -136,6 +139,30 @@ public class InvestorDAO implements GenericDAO<Investor> {
         return null;
     }
 
+    public Investor findByEmail(String email) {
+        try {
+            System.out.println("Find Investor by Email: " + email);
+            // as it is unique we can use first
+            Document doc = collection.find(Filters.eq("email", email)).first();
+            return doc != null ? documentToInvestor(doc) : null;
+        } catch (Exception e) {
+            System.err.println("Error finding investor by email: " + e.getMessage());
+            return null;
+        }
+    }
+
+    public Investor findByUsername(String username) {
+        try {
+            System.out.println("Find Investor by Username: " + username);
+            // as it is unique we can use first
+            Document doc = collection.find(Filters.eq("username", username)).first();
+            return doc != null ? documentToInvestor(doc) : null;
+        } catch (Exception e) {
+            System.err.println("Error finding investor by username: " + e.getMessage());
+            return null;
+        }
+    }
+
     public Wallet getWalletById(String walletId) {
         try {
             ObjectId walletObjectId = new ObjectId(walletId);
@@ -164,6 +191,52 @@ public class InvestorDAO implements GenericDAO<Investor> {
         } catch (Exception e) {
             System.out.println("Error updating Wallet: " + e.getMessage());
             throw new RuntimeException("Error updating wallet: " + e.getMessage());
+        }
+    }
+
+
+    public boolean updateInvestorPartial(String investorId, Document updates) {
+        try {
+            if (!ObjectId.isValid(investorId)) {
+                throw new IllegalArgumentException("Invalid Investor ID format for partial update: " + investorId);
+            }
+            if (updates == null || updates.isEmpty()) {
+                System.out.println("No updates provided for investor " + investorId);
+                return false; // Or throw exception?
+            }
+
+            // Ensure we don't try to update _id or arrays directly with this method
+            updates.remove("_id");
+            updates.remove("wallets"); // wallets should be updated with updateWallet
+            updates.remove("addresses"); // addresses should be updated with updateAddress
+            updates.remove("creationDate"); // Should not be updated
+
+            if (updates.isEmpty()) {
+                System.out.println("No valid fields left to update for investor " + investorId);
+                return false;
+            }
+
+            // Add lastUpdateDate automatically
+            updates.put("lastUpdateDate", LocalDateTime.now());
+
+            Document filter = new Document("_id", new ObjectId(investorId));
+            Document updateOperation = new Document("$set", updates);
+
+            com.mongodb.client.result.UpdateResult result = collection.updateOne(filter, updateOperation);
+
+            if (result.getMatchedCount() == 0) {
+                System.err.println("Investor not found for partial update: " + investorId);
+                return false;
+            }
+            System.out.println("Partially updated investor " + investorId + ". Matched: " + result.getMatchedCount() + ", Modified: " + result.getModifiedCount());
+            return result.getModifiedCount() > 0 || result.getMatchedCount() > 0; // Return true if matched, even if no fields changed value
+
+        } catch (IllegalArgumentException e) {
+            throw e; // Propagate validation error
+        } catch (Exception e) {
+            System.err.println("Error partially updating investor " + investorId + ": " + e.getMessage());
+            e.printStackTrace();
+            return false;
         }
     }
 }

@@ -3,15 +3,17 @@ package Routes.Handlers;
 import Routes.RoutesUtils;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
-import Models.Stock; // Assuming Stock model exists and has toJson()
-// StockPriceHistory might not be needed directly if service returns JSONObject
-// import model.StockPriceHistory;
+import Models.Stock;
+import Models.StockPriceHistory;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import Services.crudStockService; // Corrected service name
+import Services.crudStockService;
+import Services.StockHistoryService;
 
 import java.io.IOException;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Map;
@@ -24,6 +26,7 @@ import java.nio.charset.StandardCharsets;
 public class StocksHandler implements HttpHandler {
 
     private final crudStockService stockService;
+    private final StockHistoryService stockHistoryService;
 
     // Regex patterns for stock routes
     // /stocks/{ticker}/history - ticker can contain letters, numbers, dots, dashes
@@ -32,10 +35,12 @@ public class StocksHandler implements HttpHandler {
     private static final Pattern TICKER_PATTERN = Pattern.compile("^/stocks/([a-zA-Z0-9.-]+)$");
     // /stocks (base route)
     private static final Pattern BASE_PATTERN = Pattern.compile("^/stocks/?$"); // Allow optional trailing slash
+    // /evolution of a stock
+    private static final Pattern EVOLUTION_PATTERN = Pattern.compile("^/stocks/([a-zA-Z0-9.-]+)/evolution$");
 
-
-    public StocksHandler(crudStockService stockService) {
+    public StocksHandler(crudStockService stockService, StockHistoryService stockHistoryService) {
         this.stockService = stockService;
+        this.stockHistoryService = stockHistoryService;
     }
 
     @Override
@@ -47,6 +52,17 @@ public class StocksHandler implements HttpHandler {
 
         try {
             Matcher matcher;
+
+            matcher = EVOLUTION_PATTERN.matcher(path);
+            if (matcher.matches()) {
+                String ticker = URLDecoder.decode(matcher.group(1), StandardCharsets.UTF_8);
+                if ("GET".equalsIgnoreCase(method)) {
+                    handleGetStockEvolution(exchange, ticker);
+                } else {
+                    RoutesUtils.sendErrorResponse(exchange, 405, "Method Not Allowed for " + path);
+                }
+                return;
+            }
 
             // Check for history first (more specific)
             matcher = HISTORY_PATTERN.matcher(path);
@@ -84,6 +100,7 @@ public class StocksHandler implements HttpHandler {
                 }
                 return;
             }
+
 
             // No patterns matched
             RoutesUtils.sendErrorResponse(exchange, 404, "Not Found: Invalid stock path " + path);
@@ -236,6 +253,58 @@ public class StocksHandler implements HttpHandler {
             System.err.println("Error getting history for stock " + ticker + ": " + e.getMessage());
             e.printStackTrace();
             RoutesUtils.sendErrorResponse(exchange, 500, "Internal server error while retrieving stock history.");
+        }
+    }
+
+    private void handleGetStockEvolution(HttpExchange exchange, String ticker) throws IOException {
+        Map<String, String> params = RoutesUtils.parseQueryParams(exchange.getRequestURI().getQuery());
+        LocalDateTime startDate = null;
+        LocalDateTime endDate = null;
+
+        try {
+            // Require startDate and endDate for this calculation
+            if (!params.containsKey("startDate") || !params.containsKey("endDate")) {
+                RoutesUtils.sendErrorResponse(exchange, 400, "Missing required query parameters: 'startDate' and 'endDate'.");
+                return;
+            }
+            // Expecting format like YYYY-MM-DDTHH:MM:SS or just YYYY-MM-DD
+            // Convert YYYY-MM-DD to start/end of day
+            String startDateStr = params.get("startDate");
+            String endDateStr = params.get("endDate");
+
+            if (startDateStr.length() == 10) { // YYYY-MM-DD
+                startDate = LocalDate.parse(startDateStr).atStartOfDay();
+            } else {
+                startDate = LocalDateTime.parse(startDateStr);
+            }
+            if (endDateStr.length() == 10) { // YYYY-MM-DD
+                endDate = LocalDate.parse(endDateStr).atTime(LocalTime.MAX); // End of day
+            } else {
+                endDate = LocalDateTime.parse(endDateStr);
+            }
+
+            if (startDate.isAfter(endDate)) {
+                RoutesUtils.sendErrorResponse(exchange, 400, "startDate cannot be after endDate.");
+                return;
+            }
+
+        } catch (DateTimeParseException e) {
+            RoutesUtils.sendErrorResponse(exchange, 400, "Invalid date format. Use ISO format like YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS.");
+            return;
+        }
+
+        try {
+            JSONObject result = stockHistoryService.getStockPercentageChange(ticker, startDate, endDate);
+            if (result.has("error")) {
+                // Maybe return 404 if data not found? Or keep 200 with error message? Let's use 404
+                RoutesUtils.sendErrorResponse(exchange, 404, result.optString("error", "Could not calculate evolution."));
+            } else {
+                RoutesUtils.sendResponse(exchange, 200, result.toString());
+            }
+        } catch (Exception e) { // Catch-all for unexpected service errors
+            System.err.println("Error getting stock evolution for " + ticker + ": " + e.getMessage());
+            e.printStackTrace();
+            RoutesUtils.sendErrorResponse(exchange, 500, "Internal server error while calculating stock evolution.");
         }
     }
 }

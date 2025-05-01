@@ -1,30 +1,41 @@
 package Services;
 
 import CacheDAO.HoldingCacheDAO;
+import DAO.StockDAO;
+import DAO.TransactionDAO;
+import Models.Stock;
+import Models.Transaction;
+import Models.Wallet;
 import com.mongodb.client.MongoDatabase;
 import Config.AppConfig;
 import DAO.HoldingsDAO;
 import Models.Holding;
+import org.bson.Document;
 import org.bson.types.ObjectId;
+import org.json.JSONObject;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
+
+import java.time.LocalDateTime;
 
 public class HoldingService {
 
     private final HoldingsDAO holdingsDAO;
     private final HoldingCacheDAO holdingCacheDAO;
+    private final TransactionDAO transactionDAO;
+    private final StockDAO stockDAO;
 
     public HoldingService(MongoDatabase database) {
-        this.holdingsDAO = new HoldingsDAO(database.getCollection("holdings"));
+        this.holdingsDAO = new HoldingsDAO(database);
         this.holdingCacheDAO = new HoldingCacheDAO();
+        this.transactionDAO = new TransactionDAO(database);
+        this.stockDAO = new StockDAO(database);
     }
 
     /**
      * Retrieves all holdings for a specific wallet.
-     * @param walletIdStr The String representation of the wallet's ObjectId.
-     * @return A list of Holding objects, or an empty list if none found.
-     * @throws IllegalArgumentException if walletIdStr is not a valid ObjectId format.
      */
     public List<Holding> getHoldingsByWalletId(String walletIdStr) throws IllegalArgumentException {
 

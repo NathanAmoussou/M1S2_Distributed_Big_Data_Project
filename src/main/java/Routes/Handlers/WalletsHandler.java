@@ -37,7 +37,10 @@ public class WalletsHandler implements HttpHandler {
     private static final Pattern TRANSACTIONS_PATTERN = Pattern.compile("^/wallets/([a-fA-F0-9]{24})/transactions$");
     // /wallets/{walletId} (Optional: for getting basic wallet info)
     private static final Pattern WALLET_ID_PATTERN = Pattern.compile("^/wallets/([a-fA-F0-9]{24})$");
-
+    // /wallets/{walletId}/value
+    private static final Pattern WALLET_VALUE_PATTERN = Pattern.compile("^/wallets/([a-fA-F0-9]{24})/value$");
+    // /wallets/{walletId}/profitLoss
+    private static final Pattern WALLET_PROFIT_LOSS_PATTERN = Pattern.compile("^/wallets/([a-fA-F0-9]{24})/profitLoss$");
 
     public WalletsHandler(InvestorService investorService, HoldingService holdingService, TransactionService transactionService) {
         this.investorService = investorService;
@@ -53,6 +56,29 @@ public class WalletsHandler implements HttpHandler {
 
         try {
             Matcher matcher;
+
+            matcher = WALLET_VALUE_PATTERN.matcher(path);
+            if (matcher.matches()) {
+                String walletId = matcher.group(1);
+                if ("GET".equalsIgnoreCase(method)) {
+                    handleGetWalletValue(exchange, walletId);
+                } else {
+                    RoutesUtils.sendErrorResponse(exchange, 405, "Method Not Allowed for " + path);
+                }
+                return;
+            }
+
+            matcher = WALLET_PROFIT_LOSS_PATTERN.matcher(path);
+            if (matcher.matches()) {
+                String walletId = matcher.group(1);
+                if ("GET".equalsIgnoreCase(method)) {
+                    handleGetWalletProfitLoss(exchange, walletId);
+                } else {
+                    RoutesUtils.sendErrorResponse(exchange, 405, "Method Not Allowed for " + path);
+                }
+                return;
+            }
+
 
             matcher = FUNDS_PATTERN.matcher(path);
             if (matcher.matches()) {
@@ -254,6 +280,60 @@ public class WalletsHandler implements HttpHandler {
             System.err.println("Error getting details for wallet " + walletIdStr + ": " + e.getMessage());
             e.printStackTrace();
             RoutesUtils.sendErrorResponse(exchange, 500, "Internal server error while retrieving wallet details.");
+        }
+    }
+
+    private void handleGetWalletValue(HttpExchange exchange, String walletIdStr) throws IOException {
+        try {
+            // Service method handles validation and calculation
+            JSONObject valueResult = investorService.getWalletCurrentValue(walletIdStr);
+            RoutesUtils.sendResponse(exchange, 200, valueResult.toString());
+
+        } catch (RuntimeException e) {
+            throw e; // Re-throw for main handler
+        } catch (Exception e) {
+            System.err.println("Error getting value for wallet " + walletIdStr + ": " + e.getMessage());
+            e.printStackTrace();
+            RoutesUtils.sendErrorResponse(exchange, 500, "Internal Server Error while calculating wallet value.");
+        }
+    }
+
+    private void handleGetWalletProfitLoss(HttpExchange exchange, String walletIdStr) throws IOException {
+        Map<String, String> params = RoutesUtils.parseQueryParams(exchange.getRequestURI().getQuery());
+        String stockTicker = params.get("stockTicker");
+
+        if (stockTicker == null || stockTicker.trim().isEmpty()) {
+            // We call the global profit/loss handler if stockTicker is missing
+//            RoutesUtils.sendErrorResponse(exchange, 400, "Missing required query parameter: 'stockTicker'.");
+            this.handleGetWalletGlobalProfitLoss(exchange, walletIdStr);
+            return;
+        }
+
+        try {
+            // Service method handles validation and calculation
+            JSONObject result = investorService.getWalletStockProfitLoss(walletIdStr, stockTicker);
+            RoutesUtils.sendResponse(exchange, 200, result.toString());
+
+        } catch (RuntimeException e) {
+            throw e; // Re-throw for main handler
+        } catch (Exception e) {
+            System.err.println("Error getting profit/loss for wallet " + walletIdStr + ", stock " + stockTicker + ": " + e.getMessage());
+            e.printStackTrace();
+            RoutesUtils.sendErrorResponse(exchange, 500, "Internal Server Error while calculating profit/loss.");
+        }
+    }
+
+    private void handleGetWalletGlobalProfitLoss(HttpExchange exchange, String walletIdStr) throws IOException {
+        try {
+            JSONObject result = investorService.getWalletGlobalProfitLossViaAggregation(walletIdStr);
+            RoutesUtils.sendResponse(exchange, 200, result.toString());
+
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            System.err.println("Error getting global profit/loss for wallet " + walletIdStr + ": " + e.getMessage());
+            e.printStackTrace();
+            RoutesUtils.sendErrorResponse(exchange, 500, "Internal Server Error while calculating global profit/loss.");
         }
     }
 }

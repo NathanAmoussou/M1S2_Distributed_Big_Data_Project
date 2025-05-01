@@ -41,17 +41,17 @@ public class JsonUtils {
      * @return The BigDecimal value or BigDecimal.ZERO if not found or invalid format.
      */
     public static BigDecimal getBigDecimal(JSONObject json, String key) {
-        Object balanceObj = json.opt(key);
+        Object obj = json.opt(key);
 
-        if (balanceObj instanceof BigDecimal) {
-            return (BigDecimal) balanceObj; // Direct assignment if it's a BigDecimal
-        } else if (balanceObj instanceof String) {
-            return new BigDecimal((String) balanceObj); // Convert string to BigDecimal
-        } else if (balanceObj instanceof JSONObject) {
+        if (obj instanceof BigDecimal) {
+            return (BigDecimal) obj; // Direct assignment if it's a BigDecimal
+        } else if (obj instanceof String) {
+            return new BigDecimal((String) obj); // Convert string to BigDecimal
+        } else if (obj instanceof JSONObject) {
             // Handle MongoDB's $numberDecimal format
-            JSONObject balanceJson = (JSONObject) balanceObj;
-            if (balanceJson.has("$numberDecimal")) {
-                return new BigDecimal(balanceJson.getString("$numberDecimal"));
+            JSONObject objJson = (JSONObject) obj;
+            if (objJson.has("$numberDecimal")) {
+                return new BigDecimal(objJson.getString("$numberDecimal"));
             }
         }
         return BigDecimal.ZERO; // Default value for balance

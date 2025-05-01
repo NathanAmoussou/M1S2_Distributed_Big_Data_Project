@@ -9,16 +9,16 @@ import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoDatabase;
 import com.sun.net.httpserver.HttpServer;
 
-// Import NEW consolidated handlers
-import Routes.Handlers.InvestorsHandler; // New
-import Routes.Handlers.WalletsHandler;   // New
-import Routes.Handlers.StocksHandler;    // New
+import Routes.Handlers.InvestorsHandler;
+import Routes.Handlers.WalletsHandler;
+import Routes.Handlers.StocksHandler;
+import Routes.Handlers.ReportsHandler;
 
-// Keep service imports
 import Services.HoldingService;
 import Services.InvestorService;
 import Services.TransactionService;
 import Services.crudStockService;
+import Services.StockHistoryService;
 
 public class RestApiServer {
     private final HttpServer server;
@@ -28,6 +28,7 @@ public class RestApiServer {
     private final TransactionService transactionService;
     private final crudStockService stockService;
     private final HoldingService holdingService;
+    private final StockHistoryService stockHistoryService;
 
     public RestApiServer(String mongoUri, String dbName, int port) throws IOException {
         mongoClient = MongoClients.create(mongoUri);
@@ -35,24 +36,22 @@ public class RestApiServer {
         investorService = new InvestorService(database);
         transactionService = new TransactionService(database);
         stockService = new crudStockService(database);
-        holdingService = new HoldingService(database); // WalletHandler will need this
+        holdingService = new HoldingService(database);
+        stockHistoryService = new StockHistoryService(database);
 
         server = HttpServer.create(new InetSocketAddress(port), 0);
 
-        // Handles: GET /investors, POST /investors, GET /investors/{id}, GET /investors/{id}/wallets
         server.createContext("/investors", new InvestorsHandler(investorService));
 
-        // Handles: POST /wallets/{id}/funds, GET /wallets/{id}/holdings, GET /wallets/{id}/transactions, GET /wallets/{id}
         server.createContext("/wallets", new WalletsHandler(investorService, holdingService, transactionService)); // Pass needed services
 
-        // Handles: GET /stocks, POST /stocks, GET /stocks/{ticker}, GET /stocks/{ticker}/history
-        server.createContext("/stocks", new StocksHandler(stockService));
+        server.createContext("/stocks", new StocksHandler(stockService, stockHistoryService));
 
-        // Handles: POST /transactions/buy, POST /transactions/sell
-        // Note: We map the base "/transactions" path. The handler itself will check the full path.
         server.createContext("/transactions", new TransactionsHandler(transactionService)); // Pass needed services
 
-        // Set a default executor
+        server.createContext("/reports", new ReportsHandler(transactionService));
+
+        // default executor
         server.setExecutor(java.util.concurrent.Executors.newCachedThreadPool());
     }
 
@@ -61,11 +60,10 @@ public class RestApiServer {
         System.out.println("REST API Server started on port " + server.getAddress().getPort());
     }
 
-    // Optional: Method to stop the server gracefully
     public void stop() {
         System.out.println("Stopping REST API Server...");
-        server.stop(0); // 0 seconds delay
-        mongoClient.close(); // Close MongoDB connection
+        server.stop(0);
+        mongoClient.close();
         System.out.println("Server stopped.");
     }
 }

@@ -214,5 +214,44 @@ public class StockPriceHistoryDAO implements GenericDAO<StockPriceHistory> {
         }
     }
 
+    public StockPriceHistory findFirstRecordInRange(String ticker, LocalDateTime startDateTime, LocalDateTime endDateTime) {
+        try {
+            List<Bson> filters = new ArrayList<>();
+            filters.add(Filters.eq("stockPriceHistoryTicker", ticker));
+            if (startDateTime != null) filters.add(Filters.gte("dateTime", startDateTime));
+            if (endDateTime != null) filters.add(Filters.lte("dateTime", endDateTime));
+            Bson finalFilter = filters.isEmpty() ? new Document() : Filters.and(filters);
+
+            Document doc = collection.find(finalFilter)
+                    .sort(Sorts.ascending("dateTime")) // Sort ascending to get the first
+                    .limit(1)
+                    .first();
+            return doc != null ? documentToStockPriceHistory(doc) : null;
+        } catch (Exception e) {
+            System.err.println("Error finding first stock history record: " + e.getMessage());
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public StockPriceHistory findLastRecordInRange(String ticker, LocalDateTime startDateTime, LocalDateTime endDateTime) {
+        try {
+            List<Bson> filters = new ArrayList<>();
+            filters.add(Filters.eq("stockPriceHistoryTicker", ticker));
+            if (startDateTime != null) filters.add(Filters.gte("dateTime", startDateTime));
+            if (endDateTime != null) filters.add(Filters.lte("dateTime", endDateTime));
+            Bson finalFilter = filters.isEmpty() ? new Document() : Filters.and(filters);
+
+            Document doc = collection.find(finalFilter)
+                    .sort(Sorts.descending("dateTime")) // Sort descending to get the last
+                    .limit(1)
+                    .first();
+            return doc != null ? documentToStockPriceHistory(doc) : null;
+        } catch (Exception e) {
+            System.err.println("Error finding last stock history record: " + e.getMessage());
+            e.printStackTrace();
+            return null;
+        }
+    }
 
 }

@@ -1,21 +1,26 @@
 package DAO;
 
 import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.*;
 import org.bson.Document;
 import Models.Transaction;
 import org.bson.conversions.Bson;
+import org.bson.types.Decimal128;
 import org.bson.types.ObjectId;
 import org.json.JSONObject;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class TransactionDAO implements GenericDAO<Transaction> {
     private final MongoCollection<Document> collection;
-    public TransactionDAO(MongoCollection<Document> collection) {
-        this.collection = collection;
+    public TransactionDAO(MongoDatabase database) {
+        this.collection = database.getCollection("transactions");
     }
 
     @Override
@@ -165,4 +170,118 @@ public class TransactionDAO implements GenericDAO<Transaction> {
             return new ArrayList<>();
         }
     }
+
+    public List<Transaction> findTransactionsByWalletAndStock(ObjectId walletId, String stockTicker) {
+        List<Transaction> results = new ArrayList<>();
+        try {
+            Document filter = new Document("walletId", walletId).append("stockId", stockTicker);
+            collection.find(filter)
+                    .sort(Sorts.ascending("createdAt")) // Optional: sort by date
+                    .forEach(doc -> {
+                        Transaction t = documentToTransaction(doc);
+                        if (t != null) results.add(t);
+                    });
+            return results;
+        } catch (Exception e) {
+            System.err.println("Error finding transactions by walletId and stockTicker: " + e.getMessage());
+            e.printStackTrace();
+            return new ArrayList<>(); // Return empty list on error
+        }
+    }
+
+    /**
+     * Calculates the total amount spent on buys and received from sells for a specific wallet
+     * using MongoDB aggregation.
+     *
+     * @param walletId The ObjectId of the wallet.
+     * @return A Document containing "totalSpentOnBuys" and "totalReceivedFromSells" as BigDecimal,
+     *         or null if an error occurs or no transactions found.
+     */
+    public Document aggregateBuySellTotals(ObjectId walletId) {
+        List<Bson> pipeline = Arrays.asList(
+                // Match transactions for the specific wallet
+                Aggregates.match(Filters.eq("walletId", walletId)),
+
+                // Calculate transaction value (quantity * priceAtTransaction)
+                Aggregates.addFields(new Field<>("transactionValue",
+                        new Document("$multiply", Arrays.asList("$quantity", "$priceAtTransaction"))
+                )),
+
+                // Group by transaction type (BUY/SELL) and sum the transaction values
+                Aggregates.group(
+                        "$transactionTypesId", // Group by the type field
+                        Accumulators.sum("totalValue", "$transactionValue")
+                ),
+
+                // Group again (without an _id) to get the results into a single document
+                Aggregates.group(
+                        null, // Group all results into one document
+                        Accumulators.push("totalsByType", // Create an array of { _id: type, totalValue: value }
+                                new Document("type", "$_id").append("total", "$totalValue")
+                        )
+                ),
+
+                // project to reshape the output into the desired format
+                Aggregates.project(Projections.fields(
+                        Projections.excludeId(), // Exclude the default _id from the final group stage
+                        Projections.computed("totalSpentOnBuys",
+                                // Use $reduce to find the total for "BUY" type in the array
+                                new Document("$reduce", new Document("input", "$totalsByType")
+                                        .append("initialValue", BigDecimal.ZERO) // Start with Decimal128 zero
+                                        .append("in", new Document("$cond", Arrays.asList(
+                                                new Document("$eq", Arrays.asList("$$this.type", "BUY")), // If type is "BUY"
+                                                new Document("$add", Arrays.asList("$$value", "$$this.total")), // Add its total
+                                                "$$value" // Otherwise, keep the accumulator the same
+                                        )))
+                                )
+                        ),
+                        Projections.computed("totalReceivedFromSells",
+                                // Use $reduce to find the total for "SELL" type in the array
+                                new Document("$reduce", new Document("input", "$totalsByType")
+                                        .append("initialValue", BigDecimal.ZERO)
+                                        .append("in", new Document("$cond", Arrays.asList(
+                                                new Document("$eq", Arrays.asList("$$this.type", "SELL")), // If type is "SELL"
+                                                new Document("$add", Arrays.asList("$$value", "$$this.total")),
+                                                "$$value"
+                                        )))
+                                )
+                        )
+                ))
+        );
+
+        try {
+            // Execute the aggregation pipeline
+            Document result = collection.aggregate(pipeline).first();
+
+            // Process the result to return BigDecimals
+            if (result != null) {
+                Document processedResult = new Document();
+                Object spentObj = result.get("totalSpentOnBuys");
+                Object receivedObj = result.get("totalReceivedFromSells");
+
+                processedResult.put("totalSpentOnBuys", convertToBigDecimal(spentObj));
+                processedResult.put("totalReceivedFromSells", convertToBigDecimal(receivedObj));
+                return processedResult;
+
+            } else {
+                // No transactions found, return zero totals
+                return new Document("totalSpentOnBuys", BigDecimal.ZERO)
+                        .append("totalReceivedFromSells", BigDecimal.ZERO);
+            }
+        } catch (Exception e) {
+            System.err.println("Error aggregating buy/sell totals for wallet " + walletId + ": " + e.getMessage());
+            e.printStackTrace();
+            return null; // Indicate error
+        }
+    }
+
+    private BigDecimal convertToBigDecimal(Object value) {
+        if (value instanceof Decimal128) {
+            return ((Decimal128) value).bigDecimalValue();
+        } else if (value instanceof Number) {
+            return new BigDecimal(value.toString());
+        }
+        return BigDecimal.ZERO; // Default to zero if null or unexpected type
+    }
 }
+

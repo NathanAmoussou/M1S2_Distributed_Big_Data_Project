@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 
+import org.bson.Document;
 import org.bson.types.ObjectId;
 
 import com.mongodb.client.MongoDatabase;
@@ -37,8 +38,8 @@ public class TransactionService {
     public TransactionService(MongoDatabase database) {
         this.investorDAO = new InvestorDAO(database);
         this.stockDAO = new StockDAO(database);
-        this.transactionDAO = new TransactionDAO(database.getCollection("transactions"));
-        this.holdingsDAO = new HoldingsDAO(database.getCollection("holdings"));
+        this.transactionDAO = new TransactionDAO(database);
+        this.holdingsDAO = new HoldingsDAO(database);
 
         this.investorCacheDAO = new InvestorCacheDAO();
         this.transactionCacheDAO = new TransactionCacheDAO();
@@ -101,9 +102,6 @@ public class TransactionService {
             holdingsDAO.save(holding);
         }
 
-
-
-
         if (AppConfig.isEnabled()) {
             Investor investor = investorDAO.findInvestorByWalletId(walletId);
 
@@ -143,8 +141,11 @@ public class TransactionService {
 
         BigDecimal price = stock.getLastPrice();
         BigDecimal totalSellCost = price.multiply(quantity);
-
-        wallet.setBalance(wallet.getBalance().subtract(totalSellCost));
+//
+//        System.out.println("Balance before sell: " + wallet.getBalance());
+//        System.out.println("Total Sell Cost: " + totalSellCost);
+        wallet.setBalance(wallet.getBalance().add(totalSellCost));
+//        System.out.println("Balance after sell: " + wallet.getBalance());
         investorDAO.updateWallet(wallet);
 
         // Création de la transaction
@@ -221,6 +222,12 @@ public class TransactionService {
         LocalDateTime endDateTime = (endDate != null) ? endDate.atTime(LocalTime.MAX) : null;
 
         return transactionDAO.findByWalletIdAndDateRange(walletId, startDateTime, endDateTime);
+    }
+
+    public List<Document> getMostTradedStocks(LocalDateTime start, LocalDateTime end, int limit) {
+        // Add validation for limit if needed (e.g., limit > 0)
+        if (limit <= 0) limit = 10; // Default limit
+        return transactionDAO.aggregateStockTransactionCounts(start, end, limit);
     }
 
 }
