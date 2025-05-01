@@ -50,7 +50,7 @@ public class Application {
         // Initialiser les DAO
         StockDAO stockDao = new StockDAO(database);
         StockPriceHistoryDAO historyDao = new StockPriceHistoryDAO(database);
-        crudStockService stockService = new crudStockService(database);
+
 
         // Test regular CRUD operations
 //        System.out.println("\n---------- Testing Stock CRUD Operations ----------");
@@ -71,6 +71,7 @@ public class Application {
             throw new RuntimeException(e);
         }
         if (Config.AppConfig.isEnabled()) {
+            crudStockService stockService = new crudStockService(database);
             startDailyHistoryCacheRefresh(stockService, historyDao);
         } else {
             System.out.println("Daily history cache refresh task DISABLED because cache is disabled.");
