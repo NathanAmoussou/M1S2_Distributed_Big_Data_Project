@@ -11,7 +11,7 @@ public class MongoDBConnection {
 
     private MongoDBConnection() {
         client = MongoClients.create("mongodb://localhost:27017");
-        database = client.getDatabase("bado");
+        database = client.getDatabase("gestionBourse");
     }
 
     public static synchronized MongoDBConnection getInstance() {
