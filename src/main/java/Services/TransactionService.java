@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Collections;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -14,6 +15,9 @@ import com.mongodb.TransactionOptions;
 import com.mongodb.WriteConcern;
 import com.mongodb.client.ClientSession;
 import com.mongodb.client.MongoClient;import java.util.Optional;
+import java.util.stream.Collectors;
+
+import CacheDAO.*;import java.util.Optional;
 import java.util.stream.Collectors;
 
 import CacheDAO.*;
@@ -42,6 +46,9 @@ public class TransactionService {
     private final InvestorCacheDAO investorCacheDAO;
     private final TransactionCacheDAO transactionCacheDAO;
     private final HoldingCacheDAO holdingCacheDAO;
+
+    private final WalletCalculationCacheDAO walletCalcCacheDAO;
+    private final ReportCacheDAO reportCacheDAO;
 
     private final WalletCalculationCacheDAO walletCalcCacheDAO;
     private final ReportCacheDAO reportCacheDAO;
@@ -356,6 +363,53 @@ public class TransactionService {
         }
         ObjectId walletId = new ObjectId(walletIdStr);
 
+        List<Transaction> allTransactions;
+
+        if (AppConfig.isEnabled()) {
+            Optional<List<Transaction>> cachedTransactions = transactionCacheDAO.findByWalletId(walletId);
+            if (cachedTransactions.isPresent()) {
+                allTransactions = cachedTransactions.get(); // Cache HIT
+            } else {
+                allTransactions = transactionDAO.getTransactionsByWalletId(walletId);
+
+                // Sauvegarder la liste complète dans le cache
+                if (allTransactions != null && AppConfig.isEnabled()) { // Vérifier null avant sauvegarde
+                    transactionCacheDAO.saveByWalletId(walletId, allTransactions);
+                }
+            }
+        } else {
+
+            allTransactions = transactionDAO.getTransactionsByWalletId(walletId);
+        }
+
+        if (allTransactions == null) {
+            return Collections.emptyList();
+        }
+
+        if (startDate == null && endDate == null) {
+            return allTransactions;
+        } else {
+            LocalDateTime startDateTime = (startDate != null) ? startDate.atStartOfDay() : null;
+            LocalDateTime endDateTime = (endDate != null) ? endDate.atTime(LocalTime.MAX) : null;
+
+            return allTransactions.stream()
+                    .filter(tx -> {
+                        LocalDateTime createdAt = tx.getCreatedAt();
+                        boolean afterStart = (startDateTime == null) || !createdAt.isBefore(startDateTime);
+                        boolean beforeEnd = (endDateTime == null) || !createdAt.isAfter(endDateTime);
+                        return afterStart && beforeEnd;
+                    })
+                    .sorted((t1, t2) -> t2.getCreatedAt().compareTo(t1.getCreatedAt()))
+                    .collect(Collectors.toList());
+        }
+    }
+    /*
+    public List<Transaction> getTransactionsForWallet(String walletIdStr, LocalDate startDate, LocalDate endDate) {
+        if (!ObjectId.isValid(walletIdStr)) {
+            throw new IllegalArgumentException("Invalid wallet ID format: " + walletIdStr);
+        }
+        ObjectId walletId = new ObjectId(walletIdStr);
+
         LocalDateTime startDateTime = (startDate != null) ? startDate.atStartOfDay() : null;
         LocalDateTime endDateTime = (endDate != null) ? endDate.atTime(LocalTime.MAX) : null;
 
@@ -381,10 +435,32 @@ public class TransactionService {
         return reportData == null ? Collections.emptyList() : reportData;
     }
     /*
+    }*/
+    public List<Document> getMostTradedStocks(LocalDateTime start, LocalDateTime end, int limit) {
+        if (limit <= 0) limit = 10;
+
+        if (AppConfig.isEnabled()) {
+            Optional<List<Document>> cachedReport = reportCacheDAO.findMostTraded(start, end, limit);
+            if (cachedReport.isPresent()) {
+                System.out.println("Most traded stocks found in cache: " + cachedReport.get().size());
+                return cachedReport.get();
+            }
+        }
+
+        List<Document> reportData = transactionDAO.aggregateStockTransactionCounts(start, end, limit);
+
+        if (reportData != null && AppConfig.isEnabled()) {
+            reportCacheDAO.saveMostTraded(start, end, limit, reportData);
+        }
+
+        return reportData == null ? Collections.emptyList() : reportData;
+    }
+    /*
     public List<Document> getMostTradedStocks(LocalDateTime start, LocalDateTime end, int limit) {
         // Add validation for limit if needed (e.g., limit > 0)
         if (limit <= 0) limit = 10; // Default limit
         return transactionDAO.aggregateStockTransactionCounts(start, end, limit);
+    }*/
     }*/
 
 }

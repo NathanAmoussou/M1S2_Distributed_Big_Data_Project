@@ -1,5 +1,6 @@
 package Services;
 
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -35,6 +36,7 @@ public class InvestorService {
     private final StockDAO stockDAO;
     private final TransactionDAO transactionDAO;
     private final WalletCalculationCacheDAO walletCalcCacheDAO;
+    private final WalletCalculationCacheDAO walletCalcCacheDAO;
 
     public InvestorService(MongoDatabase database) {
         this.database = database;
@@ -43,6 +45,7 @@ public class InvestorService {
         this.holdingsDAO = new HoldingsDAO(database);
         this.stockDAO = new StockDAO(database);
         this.transactionDAO = new TransactionDAO(database);
+        this.walletCalcCacheDAO = new WalletCalculationCacheDAO();
         this.walletCalcCacheDAO = new WalletCalculationCacheDAO();
     }
 
@@ -428,6 +431,14 @@ public class InvestorService {
             }
         }
 
+        if (AppConfig.isEnabled()) {
+            Optional<JSONObject> cachedValue = walletCalcCacheDAO.findWalletValue(wallet.getWalletId());
+            if (cachedValue.isPresent()) {
+                System.out.println("Wallet " + walletIdStr + " cached: " + cachedValue);
+                return cachedValue.get();
+            }
+        }
+
         BigDecimal cashBalance = wallet.getBalance();
 
         BigDecimal totalHoldingValue = holdingsDAO.getTotalHoldingsValueByAggregation(wallet.getWalletId());
@@ -440,6 +451,10 @@ public class InvestorService {
         result.put("holdingsValue", totalHoldingValue);
         result.put("totalValue", totalValue);
         result.put("calculationTimestamp", LocalDateTime.now().toString());
+
+        if (AppConfig.isEnabled()) {
+            walletCalcCacheDAO.saveWalletValue(wallet.getWalletId(), result);
+        }
 
         if (AppConfig.isEnabled()) {
             walletCalcCacheDAO.saveWalletValue(wallet.getWalletId(), result);
@@ -467,6 +482,22 @@ public class InvestorService {
             throw new IllegalArgumentException("Invalid Wallet ID format: " + walletIdStr);
         }
         ObjectId walletId = new ObjectId(walletIdStr);
+
+        if (AppConfig.isEnabled()) {
+            Optional<JSONObject> cachedPL = walletCalcCacheDAO.findStockPL(walletId, stockTicker);
+            if (cachedPL.isPresent()) {
+                System.out.println("Wallet " + walletIdStr + " cached: " + cachedPL);
+                return cachedPL.get();
+            }
+        }
+
+        if (AppConfig.isEnabled()) {
+            Optional<JSONObject> cachedPL = walletCalcCacheDAO.findStockPL(walletId, stockTicker);
+            if (cachedPL.isPresent()) {
+                System.out.println("Wallet " + walletIdStr + " cached: " + cachedPL);
+                return cachedPL.get();
+            }
+        }
 
         if (AppConfig.isEnabled()) {
             Optional<JSONObject> cachedPL = walletCalcCacheDAO.findStockPL(walletId, stockTicker);
@@ -542,6 +573,13 @@ public class InvestorService {
         // Validate ID and Get Basic Wallet Info (currency)
         Wallet wallet = getWalletById(walletIdStr); // Handles validation
 
+        if (AppConfig.isEnabled()) {
+            Optional<JSONObject> cachedPL = walletCalcCacheDAO.findGlobalPL(wallet.getWalletId());
+            if (cachedPL.isPresent()) {
+                System.out.println("Wallet " + walletIdStr + " cached: " + cachedPL);
+                return cachedPL.get();
+            }
+        }
         if (AppConfig.isEnabled()) {
             Optional<JSONObject> cachedPL = walletCalcCacheDAO.findGlobalPL(wallet.getWalletId());
             if (cachedPL.isPresent()) {
