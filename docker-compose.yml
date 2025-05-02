@@ -1,0 +1,153 @@
+# docker-compose.yml (Final Automated Version)
+
+networks:
+  app-network:
+
+volumes:
+  configsvr_data:
+  shard1_data:
+  shard2_data:
+  shard3_data:
+
+services:
+  # --- Config Server Replica Set (1 Node) ---
+  mongo-configsvr:
+    image: mongo:6.0
+    container_name: mongo-configsvr
+    command: ["mongod", "--configsvr", "--replSet", "rsConfig", "--port", "27017", "--bind_ip_all"]
+    networks:
+      - app-network
+    volumes:
+      - configsvr_data:/data/db
+    healthcheck: # Add back healthcheck - setup will wait for it
+      test: echo 'db.runCommand("ping").ok' | mongosh --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  # --- Shard 1 Replica Set (1 Node) ---
+  mongo-shard1:
+    image: mongo:6.0
+    container_name: mongo-shard1
+    command: ["mongod", "--shardsvr", "--replSet", "rsShard1", "--port", "27017", "--bind_ip_all"]
+    networks:
+      - app-network
+    volumes:
+      - shard1_data:/data/db
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  # --- Shard 2 Replica Set (1 Node) ---
+  mongo-shard2:
+    image: mongo:6.0
+    container_name: mongo-shard2
+    command: ["mongod", "--shardsvr", "--replSet", "rsShard2", "--port", "27017", "--bind_ip_all"]
+    networks:
+      - app-network
+    volumes:
+      - shard2_data:/data/db
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  # --- Shard 3 Replica Set (1 Node) ---
+  mongo-shard3:
+    image: mongo:6.0
+    container_name: mongo-shard3
+    command: ["mongod", "--shardsvr", "--replSet", "rsShard3", "--port", "27017", "--bind_ip_all"]
+    networks:
+      - app-network
+    volumes:
+      - shard3_data:/data/db
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  # --- Mongos Router ---
+  mongo-mongos:
+    image: mongo:6.0
+    container_name: mongo-mongos
+    depends_on: # Depends on config server starting
+      mongo-configsvr: { condition: service_started } # Script waits for health/primary
+    command: ["mongos", "--configdb", "rsConfig/mongo-configsvr:27017", "--port", "27017", "--bind_ip_all"]
+    ports:
+      - "27017:27017"
+    networks:
+      - app-network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh --quiet
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 120s # Give ample time for setup script to finish
+
+  # --- MongoDB Cluster Setup Service ---
+  mongo-setup:
+    image: mongo:6.0 # Needs mongosh client
+    container_name: mongo-setup
+    depends_on: # Wait for containers to START, script handles readiness/primaries
+      mongo-configsvr: { condition: service_started }
+      mongo-shard1: { condition: service_started }
+      mongo-shard2: { condition: service_started }
+      mongo-shard3: { condition: service_started }
+      mongo-mongos: { condition: service_started }
+    volumes:
+      - ./setup_mongo_cluster.sh:/setup/setup_mongo_cluster.sh
+    networks:
+      - app-network
+    # Runs the setup script once and then exits
+    command: ["bash", "/setup/setup_mongo_cluster.sh"]
+    # restart: 'no' # Default behavior
+
+  # --- Python Flask API Service ---
+  python-api:
+    build: ./pythonApiYahooFinance
+    container_name: python-api
+    ports:
+      - "5000:5000"
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  # --- Java Application Service ---
+  java-app:
+    build: .
+    container_name: java-app
+    depends_on:
+      mongo-setup: # *** Depends on setup completing successfully ***
+        condition: service_completed_successfully
+      mongo-mongos: # *** ALSO depends on mongos being healthy AFTER setup ***
+        condition: service_healthy
+      python-api:
+        condition: service_started # Assuming python api starts reasonably fast
+    ports:
+      - "8000:8000"
+    networks:
+      - app-network
+    environment:
+      MONGO_URI: "mongodb://mongo-mongos:27017" # Use service name
+      MONGO_DB_NAME: "gestionBourse"
+      PYTHON_API_URL: "http://python-api:5000"  # Use service name
+      ENABLE_REDIS_CACHE: "true" # Or false, or use a .env file
+    restart: on-failure
+    command: >
+      bash -c '
+      if [ "$ENABLE_REDIS_CACHE" = "true" ]; then
+        echo "INFO: Redis cache ENABLED via environment variable."
+        exec java -jar ./app.jar --enableRedisCache
+      else
+        echo "INFO: Redis cache DISABLED via environment variable."
+        exec java -jar ./app.jar
+      fi
+      '
