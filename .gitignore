@@ -4,3 +4,7 @@
 /target/classes
 ./target/
 target/*
+src/main/resources/todo.md
+/.settings
+/bin
+/target

@@ -1,5 +1,6 @@
 package DAO;
 
+import com.mongodb.client.ClientSession;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Accumulators;
@@ -42,25 +43,58 @@ public class HoldingsDAO implements GenericDAO<Holding>{
         return result;
     }
 
+    // save method without session
     @Override
     public void save(Holding holding) {
+        save(null, holding);
+    }
+
+
+    // save method with session
+    public void save(ClientSession session, Holding holding) {
+        if (holding == null) {
+            throw new IllegalArgumentException("Holding to save cannot be null");
+        }
         try{
             JSONObject json = holding.toJson();
             Document doc = new Document(json.toMap());
-            collection.insertOne(doc);
+            if (session != null) {
+                collection.insertOne(session, doc);
+            } else {
+                collection.insertOne(doc);
+            }
         } catch (Exception e) {
-            System.out.println("Error saving holding: " + e.getMessage());
+//            System.out.println("Error saving holding: " + e.getMessage());
+            throw new RuntimeException("Error saving holding: " + e.getMessage());
         }
     }
 
+    // update method without session
     @Override
     public void update(Holding holding) {
+        update(null, holding); // Call session-aware version
+    }
+
+    // update method with session
+    public void update(ClientSession session, Holding holding) {
+        if (holding == null || holding.getHoldingId() == null) {
+            throw new IllegalArgumentException("Holding and its ID cannot be null for update");
+        }
         try {
             JSONObject json = holding.toJson();
             Document doc = new Document(json.toMap());
-            collection.updateOne( new Document("_id", holding.getHoldingId()), new Document("$set", doc));
+            Document filter = new Document("_id", holding.getHoldingId());
+            Document updateDoc = new Document("$set", doc);
+            // Remove _id from $set part
+            updateDoc.get("$set", Document.class).remove("_id");
+            if (session != null) {
+                collection.updateOne(session, filter, updateDoc);
+            } else {
+                collection.updateOne(filter, updateDoc);
+            }
         } catch (Exception e) {
-            System.out.println("Error updating holding: " + e.getMessage());
+//            System.out.println("Error updating holding: " + e.getMessage());
+            throw new RuntimeException("Error updating holding: " + e.getMessage());
         }
     }
 
@@ -69,7 +103,8 @@ public class HoldingsDAO implements GenericDAO<Holding>{
         try {
             collection.deleteOne(new Document("_id", new ObjectId(id)));
         } catch (Exception e) {
-            System.out.println("Error deleting holding: " + e.getMessage());
+//            System.out.println("Error deleting holding: " + e.getMessage());
+            throw new RuntimeException("Error deleting holding: " + e.getMessage());
         }
 
     }
@@ -100,11 +135,21 @@ public class HoldingsDAO implements GenericDAO<Holding>{
         return result;
     }
 
+    // findByWalletIdAndStockTicker method without session
     public Holding findByWalletIdAndStockTicker(ObjectId walletId, String stockTicker) {
-        Document doc = collection.find(new Document("walletId", walletId).append("stockTicker", stockTicker)).first();
-        System.out.println("debug findByWalletIdAndStockTicker : " + doc);
+        return findByWalletIdAndStockTicker(null, walletId, stockTicker);
+    }
+
+    // findByWalletIdAndStockTicker method with session
+    public Holding findByWalletIdAndStockTicker(ClientSession session, ObjectId walletId, String stockTicker) {
+        Document filter = new Document("walletId", walletId).append("stockTicker", stockTicker);
+        Document doc = (session != null)
+                ? collection.find(session, filter).first()
+                : collection.find(filter).first();
+//        System.out.println("debug findByWalletIdAndStockTicker (session: " + (session!=null) + ") : " + doc);
         return doc != null ? documentToHoldings(doc) : null;
     }
+
 
     public boolean hasHoldingsForWallets(List<ObjectId> walletIds) {
         if (walletIds == null || walletIds.isEmpty()) {

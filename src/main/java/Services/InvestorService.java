@@ -1,17 +1,5 @@
 package Services;
 
-import CacheDAO.InvestorCacheDAO;
-import DAO.HoldingsDAO;
-import DAO.StockDAO;
-import DAO.TransactionDAO;
-import Models.*;
-import com.mongodb.client.MongoDatabase;
-import Config.AppConfig;
-import DAO.InvestorDAO;
-import org.bson.Document;
-import org.bson.types.ObjectId;
-import org.json.JSONObject;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -20,6 +8,25 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
+import org.bson.Document;
+import org.bson.types.ObjectId;
+import org.json.JSONObject;
+
+import com.mongodb.client.MongoDatabase;
+
+import CacheDAO.InvestorCacheDAO;
+import CacheDAO.WalletCalculationCacheDAO;
+import Config.AppConfig;
+import DAO.HoldingsDAO;
+import DAO.InvestorDAO;
+import DAO.StockDAO;
+import DAO.TransactionDAO;
+import Models.Address;
+import Models.Holding;
+import Models.Investor;
+import Models.Stock;
+import Models.Wallet;
+
 public class InvestorService {
     private final InvestorDAO investorDAO;
     private final MongoDatabase database;
@@ -27,6 +34,7 @@ public class InvestorService {
     private final HoldingsDAO holdingsDAO;
     private final StockDAO stockDAO;
     private final TransactionDAO transactionDAO;
+    private final WalletCalculationCacheDAO walletCalcCacheDAO;
 
     public InvestorService(MongoDatabase database) {
         this.database = database;
@@ -35,6 +43,7 @@ public class InvestorService {
         this.holdingsDAO = new HoldingsDAO(database);
         this.stockDAO = new StockDAO(database);
         this.transactionDAO = new TransactionDAO(database);
+        this.walletCalcCacheDAO = new WalletCalculationCacheDAO();
     }
 
     /**
@@ -146,6 +155,10 @@ public class InvestorService {
 
         // Save the updated investor (MongoDB will update the document with the new wallet balance)
         this.updateInvestor(investor);
+
+        if (AppConfig.isEnabled()) {
+            walletCalcCacheDAO.invalidateAllCalculationsForWallet(wallet.getWalletId());
+        }
 
         return wallet;
     }
@@ -391,34 +404,46 @@ public class InvestorService {
     public JSONObject getWalletCurrentValue(String walletIdStr) {
         Wallet wallet = getWalletById(walletIdStr); // Handles validation and not found via exception
 
-        BigDecimal cashBalance = wallet.getBalance();
-        BigDecimal holdingsValue = BigDecimal.ZERO;
-
-        List<Holding> holdings = holdingsDAO.findByWalletId(wallet.getWalletId()); // Fetch holdings
-
-        for (Holding holding : holdings) {
-            if (holding.getQuantity().compareTo(BigDecimal.ZERO) > 0) { // Only consider holdings with quantity
-                Stock stock = stockDAO.findByStockTicker(holding.getStockTicker()); // Fetch current stock info (use cache if possible)
-                if (stock != null) {
-                    BigDecimal currentPrice = stock.getLastPrice();
-                    BigDecimal holdingValue = holding.getQuantity().multiply(currentPrice);
-                    holdingsValue = holdingsValue.add(holdingValue);
-                } else {
-                    // Handle case where stock data is missing - log warning, skip?
-                    System.err.println("Warning: Could not find stock data for ticker " + holding.getStockTicker() + " while calculating wallet value.");
-                }
+        if (AppConfig.isEnabled()) {
+            Optional<JSONObject> cachedValue = walletCalcCacheDAO.findWalletValue(wallet.getWalletId());
+            if (cachedValue.isPresent()) {
+                System.out.println("Wallet " + walletIdStr + " cached: " + cachedValue);
+                return cachedValue.get();
             }
         }
 
-        BigDecimal totalValue = cashBalance.add(holdingsValue);
+        if (AppConfig.isEnabled()) {
+            Optional<JSONObject> cachedValue = walletCalcCacheDAO.findWalletValue(wallet.getWalletId());
+            if (cachedValue.isPresent()) {
+                System.out.println("Wallet " + walletIdStr + " cached: " + cachedValue);
+                return cachedValue.get();
+            }
+        }
+
+        if (AppConfig.isEnabled()) {
+            Optional<JSONObject> cachedValue = walletCalcCacheDAO.findWalletValue(wallet.getWalletId());
+            if (cachedValue.isPresent()) {
+                System.out.println("Wallet " + walletIdStr + " cached: " + cachedValue);
+                return cachedValue.get();
+            }
+        }
+
+        BigDecimal cashBalance = wallet.getBalance();
+
+        BigDecimal totalHoldingValue = holdingsDAO.getTotalHoldingsValueByAggregation(wallet.getWalletId());
+        BigDecimal totalValue = cashBalance.add(totalHoldingValue);
 
         JSONObject result = new JSONObject();
         result.put("walletId", wallet.getWalletId().toString());
         result.put("currency", wallet.getCurrencyCode());
         result.put("cashBalance", cashBalance);
-        result.put("holdingsValue", holdingsValue);
+        result.put("holdingsValue", totalHoldingValue);
         result.put("totalValue", totalValue);
         result.put("calculationTimestamp", LocalDateTime.now().toString());
+
+        if (AppConfig.isEnabled()) {
+            walletCalcCacheDAO.saveWalletValue(wallet.getWalletId(), result);
+        }
 
         return result;
     }
@@ -428,42 +453,66 @@ public class InvestorService {
     ///
     /// //TODO: WE SHOULD MOVE THIS TO SEPARATE SERVICE HERE MAYBE NOT THE BEST PLACE SINCE IT RELIES ON MANY COLLEC
 
+    /**
+     * Calculates profit/loss for a specific stock within a wallet.
+     * Refactored to use TransactionDAO aggregation for buy/sell totals.
+     *
+     * @param walletIdStr The string of the wallet ObjectId
+     * @param stockTicker The stock ticker
+     * @return JSONObject with profit/loss details
+     * @throws RuntimeException if wallet or stock not found
+     */
     public JSONObject getWalletStockProfitLoss(String walletIdStr, String stockTicker) {
         if (!ObjectId.isValid(walletIdStr)) {
             throw new IllegalArgumentException("Invalid Wallet ID format: " + walletIdStr);
         }
         ObjectId walletId = new ObjectId(walletIdStr);
 
-        // Get Current Holding
+        if (AppConfig.isEnabled()) {
+            Optional<JSONObject> cachedPL = walletCalcCacheDAO.findStockPL(walletId, stockTicker);
+            if (cachedPL.isPresent()) {
+                System.out.println("Wallet " + walletIdStr + " cached: " + cachedPL);
+                return cachedPL.get();
+            }
+        }
+
+        if (AppConfig.isEnabled()) {
+            Optional<JSONObject> cachedPL = walletCalcCacheDAO.findStockPL(walletId, stockTicker);
+            if (cachedPL.isPresent()) {
+                System.out.println("Wallet " + walletIdStr + " cached: " + cachedPL);
+                return cachedPL.get();
+            }
+        }
+
+        if (AppConfig.isEnabled()) {
+            Optional<JSONObject> cachedPL = walletCalcCacheDAO.findStockPL(walletId, stockTicker);
+            if (cachedPL.isPresent()) {
+                System.out.println("Wallet " + walletIdStr + " cached: " + cachedPL);
+                return cachedPL.get();
+            }
+        }
+
+        // get Current Holding of the stock in the given wallet
         Holding currentHolding = holdingsDAO.findByWalletIdAndStockTicker(walletId, stockTicker);
         BigDecimal currentQuantity = (currentHolding != null) ? currentHolding.getQuantity() : BigDecimal.ZERO;
 
-        // Get Current Stock Price
+        // get current Stock Price
         Stock stock = stockDAO.findByStockTicker(stockTicker);
         if (stock == null) {
             throw new RuntimeException("Stock data not found for ticker: " + stockTicker);
         }
         BigDecimal currentPrice = stock.getLastPrice();
 
-        // Calculate Current Value of Holding
+        // calculate current Value of Holding
         BigDecimal currentValue = currentQuantity.multiply(currentPrice);
 
-        // Get All Transactions for this Wallet/Stock
-        List<Transaction> transactions = transactionDAO.findTransactionsByWalletAndStock(walletId, stockTicker);
-
-        // Calculate Total Spent (Buys) and Total Received (Sells)
-        BigDecimal totalMoneySpent = BigDecimal.ZERO;
-        BigDecimal totalMoneyReceived = BigDecimal.ZERO;
-
-        for (Transaction tx : transactions) {
-            BigDecimal transactionValue = tx.getQuantity().multiply(tx.getPriceAtTransaction());
-            if ("BUY".equalsIgnoreCase(tx.getTransactionTypesId())) { // Assuming "BUY" type
-                totalMoneySpent = totalMoneySpent.add(transactionValue);
-            } else if ("SELL".equalsIgnoreCase(tx.getTransactionTypesId())) { // Assuming "SELL" type
-                totalMoneyReceived = totalMoneyReceived.add(transactionValue);
-            }
-            // we ignore other transaction
-        }
+        // Get Total Buy/Sell Amounts via DAO Aggregation
+        // We could directly use the totalBuyCost and totalSellCost from the Holding object
+        // But we want to use the aggregation method for consistency and ensure accuracy in case these fields are incorrect
+        // This is also an opportunity to make an aggregation pipeline request
+        Document buySellTotalsDoc = transactionDAO.aggregateBuySellTotalsForStock(walletId, stockTicker);
+        BigDecimal totalMoneySpent = buySellTotalsDoc.get("totalSpentOnBuys", BigDecimal.class); // Use get with type
+        BigDecimal totalMoneyReceived = buySellTotalsDoc.get("totalReceivedFromSells", BigDecimal.class);
 
         // Calculate Profit/Loss
         // P/L = (Current Value + Money Received from Sells) - Money Spent on Buys
@@ -476,10 +525,15 @@ public class InvestorService {
         result.put("currentQuantity", currentQuantity);
         result.put("currentPrice", currentPrice);
         result.put("currentValue", currentValue);
-        result.put("totalSpentOnBuys", totalMoneySpent);
-        result.put("totalReceivedFromSells", totalMoneyReceived);
+        result.put("totalSpentOnBuys", totalMoneySpent); // retuen from aggregation and not directly from the holding object
+        result.put("totalReceivedFromSells", totalMoneyReceived); // From aggregation
         result.put("realizedAndUnrealizedProfitLoss", profitLoss);
         result.put("calculationTimestamp", LocalDateTime.now().toString());
+
+        if (AppConfig.isEnabled()) {
+            walletCalcCacheDAO.saveStockPL(walletId, stockTicker, result);
+        }
+        result.put("calculationMethod", "Aggregation"); // just to indicate the method used
 
         return result;
     }
@@ -488,6 +542,13 @@ public class InvestorService {
         // Validate ID and Get Basic Wallet Info (currency)
         Wallet wallet = getWalletById(walletIdStr); // Handles validation
 
+        if (AppConfig.isEnabled()) {
+            Optional<JSONObject> cachedPL = walletCalcCacheDAO.findGlobalPL(wallet.getWalletId());
+            if (cachedPL.isPresent()) {
+                System.out.println("Wallet " + walletIdStr + " cached: " + cachedPL);
+                return cachedPL.get();
+            }
+        }
         // Get Total Current Holdings Value via DAO Aggregation
         BigDecimal totalCurrentHoldingsValue = holdingsDAO.getTotalHoldingsValueByAggregation(wallet.getWalletId());
 
@@ -522,6 +583,10 @@ public class InvestorService {
         result.put("totalReceivedFromSells", totalMoneyReceivedFromSells);
         result.put("globalRealizedAndUnrealizedProfitLoss", globalProfitLoss);
         result.put("calculationTimestamp", LocalDateTime.now().toString());
+
+        if (AppConfig.isEnabled()) {
+            walletCalcCacheDAO.saveGlobalPL(wallet.getWalletId(), result);
+        }
 
         return result;
     }

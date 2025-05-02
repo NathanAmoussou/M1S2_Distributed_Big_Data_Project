@@ -30,11 +30,12 @@ public class RestApiServer {
     private final HoldingService holdingService;
     private final StockHistoryService stockHistoryService;
 
-    public RestApiServer(String mongoUri, String dbName, int port) throws IOException {
-        mongoClient = MongoClients.create(mongoUri);
-        database = mongoClient.getDatabase(dbName);
+
+    public RestApiServer(MongoClient client, MongoDatabase db, int port) throws IOException {
+        mongoClient = client;
+        database = db;
         investorService = new InvestorService(database);
-        transactionService = new TransactionService(database);
+        transactionService = new TransactionService(database, mongoClient);
         stockService = new crudStockService(database);
         holdingService = new HoldingService(database);
         stockHistoryService = new StockHistoryService(database);

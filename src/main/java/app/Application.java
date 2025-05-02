@@ -10,16 +10,16 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import CacheDAO.StockHistoryCacheDAO;
-import Routes.RestApiServer;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoDatabase;
 
+import CacheDAO.StockHistoryCacheDAO;
 import DAO.StockDAO;
 import DAO.StockPriceHistoryDAO;
 import Models.Stock;
 import Models.StockPriceHistory;
+import Routes.RestApiServer;
 import Services.crudStockService;
 
 public class Application {
@@ -27,25 +27,52 @@ public class Application {
 
     public static void main(String[] args) {
 
-        boolean enableCache = false;
+        // Read cache flag from environment variable or args
+        String enableCacheEnv = System.getenv("ENABLE_REDIS_CACHE");
+        boolean enableCache = "true".equalsIgnoreCase(enableCacheEnv);
+
+        // Allow overriding with command-line arg (optional)
         for (String arg : args) {
             if (arg.equalsIgnoreCase("--enableRedisCache")) {
                 enableCache = true;
                 break;
             }
+            // Add handling for other flags if needed
         }
+
+        
         Config.AppConfig.setEnabled(enableCache);
         System.out.println("Mise en cache Redis : " + Config.AppConfig.isEnabled());
 
 
 
         // MongoDB connection string
-        String mongoConnectionString = "mongodb://localhost:27017";
-        String dbName = "gestionBourse";
+//      // Read MongoDB config from environment variables
+        String mongoUriEnv = System.getenv("MONGO_URI");
+        String dbNameEnv = System.getenv("MONGO_DB_NAME");
+
+        // Provide defaults if environment variables are not set (useful for local dev without docker)
+        String mongoConnectionString = (mongoUriEnv != null && !mongoUriEnv.isEmpty()) ? mongoUriEnv : "mongodb://localhost:27017"; // Default to localhost if no env var
+        String dbName = (dbNameEnv != null && !dbNameEnv.isEmpty()) ? dbNameEnv : "gestionBourse";
+
+        System.out.println("Connecting to MongoDB at: " + mongoConnectionString);
+        System.out.println("Using Database: " + dbName);
 
         // Initialiser la connexion MongoDB
-        MongoClient mongoClient = MongoClients.create(mongoConnectionString);
-        MongoDatabase database = mongoClient.getDatabase(dbName);
+        MongoClient mongoClient = null;
+        MongoDatabase database = null;
+        try {
+             mongoClient = MongoClients.create(mongoConnectionString);
+             // Optional: Add a simple check to see if connection is successful
+             database = mongoClient.getDatabase(dbName);
+             database.runCommand(new org.bson.Document("ping", 1)); // Simple ping
+             System.out.println("Successfully connected to MongoDB and pinged database.");
+        } catch (Exception e) {
+             System.err.println("FATAL: Failed to connect to MongoDB at " + mongoConnectionString);
+             e.printStackTrace();
+             System.exit(1); // Exit if DB connection fails
+        }
+
 
         // Initialiser les DAO
         StockDAO stockDao = new StockDAO(database);
@@ -63,12 +90,20 @@ public class Application {
         // L'application continue de tourner...
         System.out.println("Application démarrée, la récupération périodique des indices boursiers est active.");
 
+        RestApiServer apiServer = null;
+        
         try {
-            RestApiServer apiServer = new RestApiServer(mongoConnectionString, dbName, 8000);
+            // Pass the existing mongoClient and database instances
+            apiServer = new RestApiServer(mongoClient, database, 8000);
+            // Start the server in a new thread
             new Thread(apiServer::start).start();
+             System.out.println("REST API Server thread started.");
 
         } catch (IOException e) {
-            throw new RuntimeException(e);
+             System.err.println("FATAL: Failed to create or start REST API Server.");
+            e.printStackTrace();
+             if (mongoClient != null) mongoClient.close();
+             System.exit(1);
         }
 
         if (Config.AppConfig.isEnabled()) {
@@ -78,18 +113,40 @@ public class Application {
             System.out.println("Daily history cache refresh task DISABLED because cache is disabled.");
         }
 
+        System.out.println("Application startup complete. Running...");
 
+        /// Graceful shutdown hook (optional but good practice)
+         // Use the final variables from the try block
+        final MongoClient finalMongoClient = mongoClient;
+        final RestApiServer finalApiServer = apiServer; // Assuming apiServer is accessible here
 
-        // Make sure the main thread doesn't exit
-        try {
-            // Block the main thread to keep the scheduled task running
-            Thread.sleep(Long.MAX_VALUE); // Keeps the application alive
-        } catch (InterruptedException e) {
-            System.err.println("Main thread interrupted: " + e.getMessage());
-        } finally {
-            // Clean up resources
-            mongoClient.close();
-        }
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            System.out.println("Shutdown hook initiated...");
+             if (scheduler != null && !scheduler.isShutdown()) {
+                 System.out.println("Shutting down scheduled executor...");
+                 scheduler.shutdown();
+                 try {
+                     if (!scheduler.awaitTermination(5, TimeUnit.SECONDS)) {
+                         scheduler.shutdownNow();
+                     }
+                 } catch (InterruptedException ex) {
+                     scheduler.shutdownNow();
+                     Thread.currentThread().interrupt();
+                 }
+                 System.out.println("Scheduler shut down.");
+             }
+             if (finalApiServer != null) {
+                  System.out.println("Stopping REST API server...");
+                  finalApiServer.stop(); // Assuming stop() handles client closing now
+                  System.out.println("REST API server stopped.");
+             } else if (finalMongoClient != null) {
+                 // Fallback if API server didn't handle it
+                  System.out.println("Closing MongoDB client (fallback)...");
+                 finalMongoClient.close();
+                  System.out.println("MongoDB client closed.");
+             }
+             System.out.println("Shutdown complete.");
+        }));
     }
     
     /**

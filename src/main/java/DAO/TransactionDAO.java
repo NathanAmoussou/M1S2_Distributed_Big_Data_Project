@@ -1,5 +1,6 @@
 package DAO;
 
+import com.mongodb.client.ClientSession;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.*;
@@ -23,9 +24,18 @@ public class TransactionDAO implements GenericDAO<Transaction> {
         this.collection = database.getCollection("transactions");
     }
 
+    // findById method to find a transaction by its ID without session
     @Override
     public Transaction findById(String id) {
-        Document doc = collection.find(new Document("_id", id)).first();
+        return findById(null, id); // Call session-aware version
+    }
+
+    // findById with session
+    public Transaction findById(ClientSession session, String id) {
+        Document filter = new Document("_id", new ObjectId(id));
+        Document doc = (session != null)
+                ? collection.find(session, filter).first()
+                : collection.find(filter).first();
         return doc != null ? documentToTransaction(doc) : null;
     }
 
@@ -35,13 +45,14 @@ public class TransactionDAO implements GenericDAO<Transaction> {
             return transaction;
         } catch (Exception e) {
             System.out.println("Error converting document to Transaction: " + e.getMessage());
+            e.printStackTrace();
             return null;
         }
 
     }
 
     @Override
-    public List<Transaction> findAll() { // WE SHOULD NOT USE FIND ALL AS WE ARE IN BIG DATA AND A LOT OF DOCS
+    public List<Transaction> findAll() { // we should not use as if all lot of transactions not optimal or maybe we can implement a paginated version if needed
        List<Transaction> transactions = new ArrayList<>();
         for (Document doc : collection.find()) {
             transactions.add(documentToTransaction(doc));
@@ -49,26 +60,64 @@ public class TransactionDAO implements GenericDAO<Transaction> {
         return transactions;
     }
 
+    // save method to save a transaction without session
     @Override
     public void save(Transaction transaction) {
+        save(null, transaction); // Call session-aware version
+    }
+
+    // save with session
+    public void save(ClientSession session, Transaction transaction) {
+        if (transaction == null) {
+            throw new IllegalArgumentException("Transaction to save cannot be null");
+        }
+        // check if createdAt or updatedAt is null and set it to now
+        if (transaction.getCreatedAt() == null) {
+            transaction.setCreatedAt(LocalDateTime.now());
+        }
+        if (transaction.getUpdatedAt() == null) {
+            transaction.setUpdatedAt(LocalDateTime.now());
+        }
         try {
             JSONObject json = transaction.toJson();
             Document doc = new Document(json.toMap());
-            collection.insertOne(doc);
+            if (session != null) {
+                collection.insertOne(session, doc);
+            } else {
+                collection.insertOne(doc);
+            }
         } catch (Exception e) {
-            System.out.println("Error saving transaction: " + e.getMessage());
+//            System.out.println("Error saving transaction: " + e.getMessage());
+            throw new RuntimeException("Error saving transaction: " + e.getMessage());
         }
     }
 
+    // update method to update a transaction without session
     @Override
     public void update(Transaction transaction) {
+        update(null, transaction); // Call session-aware version
+    }
+
+    // update with session
+    public void update(ClientSession session, Transaction transaction) {
+        if (transaction == null) {
+            throw new IllegalArgumentException("Transaction to update cannot be null");
+        }
         try {
             JSONObject json = transaction.toJson();
             Document doc = new Document(json.toMap());
-            System.out.println("Updating transaction: " + transaction);
-            collection.updateOne(new Document("_id", transaction.getTransactionId()), new Document("$set", doc));
+//            System.out.println("Updating transaction: " + transaction);
+            Document filter = new Document("_id", transaction.getTransactionId());
+            Document updateDoc = new Document("$set", doc);
+            updateDoc.get("$set", Document.class).remove("_id"); // Remove _id from update as it should not be updated
+            if (session != null) {
+                collection.updateOne(session, filter, updateDoc);
+            } else {
+                collection.updateOne(filter, updateDoc);
+            }
         } catch (Exception e) {
-            System.out.println("Error updating transaction: " + e.getMessage());
+//            System.out.println("Error updating transaction: " + e.getMessage());
+            throw new RuntimeException("Error updating transaction: " + e.getMessage());
         }
 
 
@@ -275,6 +324,92 @@ public class TransactionDAO implements GenericDAO<Transaction> {
         }
     }
 
+    /**
+     * Aggregates the total amount spent on buys and received from sells
+     * for a specific stock within a specific wallet.
+     *
+     * @param walletId    The ObjectId of the wallet.
+     * @param stockTicker The ticker symbol of the stock.
+     * @return A Document containing "totalSpentOnBuys" and "totalReceivedFromSells",
+     *         or a document with zeros if no transactions or an error occurs.
+     */
+    public Document aggregateBuySellTotalsForStock(ObjectId walletId, String stockTicker) {
+        List<Bson> pipeline = Arrays.asList(
+                // We match transactions for the specific wallet and stock
+                Aggregates.match(Filters.and(
+                        Filters.eq("walletId", walletId),
+                        Filters.eq("stockId", stockTicker)
+                )),
+
+                // Calculate transaction value
+                Aggregates.addFields(new Field<>("transactionValue",
+                        new Document("$multiply", Arrays.asList("$quantity", "$priceAtTransaction"))
+                )),
+
+                // Group by transaction type BUY OR SELL and sum values
+                Aggregates.group(
+                        "$transactionTypesId",
+                        Accumulators.sum("totalValue", "$transactionValue")
+                ),
+
+                // Group again to put the results into a single document
+                Aggregates.group(
+                        null,
+                        Accumulators.push("totalsByType",
+                                new Document("type", "$_id").append("total", "$totalValue")
+                        )
+                ),
+
+                // Project to get the final structure with BigDecimal.ZERO as default
+                Aggregates.project(Projections.fields(
+                        Projections.excludeId(),
+                        Projections.computed("totalSpentOnBuys",
+                                new Document("$reduce", new Document("input", "$totalsByType")
+                                        .append("initialValue", BigDecimal.ZERO)
+                                        .append("in", new Document("$cond", Arrays.asList(
+                                                new Document("$eq", Arrays.asList("$$this.type", "BUY")),
+                                                new Document("$add", Arrays.asList("$$value", "$$this.total")),
+                                                "$$value"
+                                        )))
+                                )
+                        ),
+                        Projections.computed("totalReceivedFromSells",
+                                new Document("$reduce", new Document("input", "$totalsByType")
+                                        .append("initialValue", BigDecimal.ZERO)
+                                        .append("in", new Document("$cond", Arrays.asList(
+                                                new Document("$eq", Arrays.asList("$$this.type", "SELL")),
+                                                new Document("$add", Arrays.asList("$$value", "$$this.total")),
+                                                "$$value"
+                                        )))
+                                )
+                        )
+                ))
+        );
+
+        try {
+            Document result = collection.aggregate(pipeline).first();
+
+            if (result != null) {
+                // We ensure results are in BigDecimals
+                Document processedResult = new Document();
+                processedResult.put("totalSpentOnBuys", convertToBigDecimal(result.get("totalSpentOnBuys")));
+                processedResult.put("totalReceivedFromSells", convertToBigDecimal(result.get("totalReceivedFromSells")));
+                return processedResult;
+            } else {
+                // if no matching transactions found wee rerutin zeros
+                return new Document("totalSpentOnBuys", BigDecimal.ZERO)
+                        .append("totalReceivedFromSells", BigDecimal.ZERO);
+            }
+        } catch (Exception e) {
+            System.err.println("Error aggregating buy/sell totals for wallet " + walletId + " and stock " + stockTicker + ": " + e.getMessage());
+            e.printStackTrace();
+            // we  return zeros on error to avoid breaking calculations in service layer
+            return new Document("totalSpentOnBuys", BigDecimal.ZERO)
+                    .append("totalReceivedFromSells", BigDecimal.ZERO);
+        }
+    }
+
+
     private BigDecimal convertToBigDecimal(Object value) {
         if (value instanceof Decimal128) {
             return ((Decimal128) value).bigDecimalValue();
@@ -283,5 +418,7 @@ public class TransactionDAO implements GenericDAO<Transaction> {
         }
         return BigDecimal.ZERO; // Default to zero if null or unexpected type
     }
+
+
 }
 

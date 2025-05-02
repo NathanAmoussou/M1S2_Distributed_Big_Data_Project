@@ -1,5 +1,6 @@
 package DAO;
 
+import com.mongodb.client.ClientSession;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
@@ -163,10 +164,16 @@ public class InvestorDAO implements GenericDAO<Investor> {
         }
     }
 
-    public Wallet getWalletById(String walletId) {
+    public Wallet getWalletById(ClientSession session, String walletId) { // Added session
         try {
             ObjectId walletObjectId = new ObjectId(walletId);
-            Document doc = collection.find(new Document("wallets.walletId", walletObjectId)).first();
+            // Pass session to find()
+            Document doc;
+            if (session != null) {
+                doc = collection.find(session, new Document("wallets.walletId", walletObjectId)).first();
+            } else {
+                doc = collection.find(new Document("wallets.walletId", walletObjectId)).first();
+            }
             if (doc != null) {
                 List<Document> wallets = (List<Document>) doc.get("wallets");
                 for (Document walletDoc : wallets) {
@@ -181,17 +188,29 @@ public class InvestorDAO implements GenericDAO<Investor> {
         return null;
     }
 
-    public Wallet updateWallet(Wallet wallet) {
+    // Overloaded method to call without session
+    public Wallet getWalletById(String walletId) {
+        // call the session version with null session if transactions are optional
+        return getWalletById(null, walletId);
+    }
+
+    // updateWallet method with session
+    public Wallet updateWallet(ClientSession session, Wallet wallet) { // Added session
         try {
-            Document doc = new Document("wallets.walletId", wallet.getWalletId());
+            Document filter = new Document("wallets.walletId", wallet.getWalletId());
             Document updateDoc = new Document("$set", new Document("wallets.$", new Document(wallet.toJson().toMap())));
-            collection.updateOne(doc, updateDoc);
-//            return findInvestorByWalletId(wallet.getWalletId().toString());
+            // Pass session to updateOne()
+            collection.updateOne(session, filter, updateDoc);
             return wallet;
         } catch (Exception e) {
             System.out.println("Error updating Wallet: " + e.getMessage());
             throw new RuntimeException("Error updating wallet: " + e.getMessage());
         }
+    }
+
+    // Overloaded to call without session
+    public Wallet updateWallet(Wallet wallet) {
+        return updateWallet(null, wallet);
     }
 
 

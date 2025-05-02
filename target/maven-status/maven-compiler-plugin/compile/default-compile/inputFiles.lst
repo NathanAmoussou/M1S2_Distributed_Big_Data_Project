@@ -1,32 +1,44 @@
-C:\Users\noe\Documents\GitHub\M1S2_Distributed_Big_Data_Project\src\main\java\app\Application.java
-C:\Users\noe\Documents\GitHub\M1S2_Distributed_Big_Data_Project\src\main\java\dao\AddresseDAO.java
-C:\Users\noe\Documents\GitHub\M1S2_Distributed_Big_Data_Project\src\main\java\dao\CountryDAO.java
-C:\Users\noe\Documents\GitHub\M1S2_Distributed_Big_Data_Project\src\main\java\dao\GenericDAO.java
-C:\Users\noe\Documents\GitHub\M1S2_Distributed_Big_Data_Project\src\main\java\dao\HoldingsDAO.java
-C:\Users\noe\Documents\GitHub\M1S2_Distributed_Big_Data_Project\src\main\java\dao\InvestorDAO.java
-C:\Users\noe\Documents\GitHub\M1S2_Distributed_Big_Data_Project\src\main\java\dao\StockDAO.java
-C:\Users\noe\Documents\GitHub\M1S2_Distributed_Big_Data_Project\src\main\java\dao\StockPriceHistoryDAO.java
-C:\Users\noe\Documents\GitHub\M1S2_Distributed_Big_Data_Project\src\main\java\dao\TransactionDAO.java
-C:\Users\noe\Documents\GitHub\M1S2_Distributed_Big_Data_Project\src\main\java\dao\TransactionStatusDAO.java
-C:\Users\noe\Documents\GitHub\M1S2_Distributed_Big_Data_Project\src\main\java\dao\TransactionTypesDAO.java
-C:\Users\noe\Documents\GitHub\M1S2_Distributed_Big_Data_Project\src\main\java\dao\WalletDAO.java
-C:\Users\noe\Documents\GitHub\M1S2_Distributed_Big_Data_Project\src\main\java\dao\WalletTypeDAO.java
-C:\Users\noe\Documents\GitHub\M1S2_Distributed_Big_Data_Project\src\main\java\model\Address.java
-C:\Users\noe\Documents\GitHub\M1S2_Distributed_Big_Data_Project\src\main\java\model\Country.java
-C:\Users\noe\Documents\GitHub\M1S2_Distributed_Big_Data_Project\src\main\java\model\Holdings.java
-C:\Users\noe\Documents\GitHub\M1S2_Distributed_Big_Data_Project\src\main\java\model\Investor.java
-C:\Users\noe\Documents\GitHub\M1S2_Distributed_Big_Data_Project\src\main\java\model\Stock.java
-C:\Users\noe\Documents\GitHub\M1S2_Distributed_Big_Data_Project\src\main\java\model\StockPriceHistory.java
-C:\Users\noe\Documents\GitHub\M1S2_Distributed_Big_Data_Project\src\main\java\model\Transaction.java
-C:\Users\noe\Documents\GitHub\M1S2_Distributed_Big_Data_Project\src\main\java\model\TransactionStatus.java
-C:\Users\noe\Documents\GitHub\M1S2_Distributed_Big_Data_Project\src\main\java\model\TransactionTypes.java
-C:\Users\noe\Documents\GitHub\M1S2_Distributed_Big_Data_Project\src\main\java\model\Wallet.java
-C:\Users\noe\Documents\GitHub\M1S2_Distributed_Big_Data_Project\src\main\java\model\WalletType.java
-C:\Users\noe\Documents\GitHub\M1S2_Distributed_Big_Data_Project\src\main\java\Routes\RestApiServer.java
-C:\Users\noe\Documents\GitHub\M1S2_Distributed_Big_Data_Project\src\main\java\service\crudStockService.java
-C:\Users\noe\Documents\GitHub\M1S2_Distributed_Big_Data_Project\src\main\java\service\InvestmentService.java
-C:\Users\noe\Documents\GitHub\M1S2_Distributed_Big_Data_Project\src\main\java\service\InvestorService.java
-C:\Users\noe\Documents\GitHub\M1S2_Distributed_Big_Data_Project\src\main\java\service\StockApiService.java
-C:\Users\noe\Documents\GitHub\M1S2_Distributed_Big_Data_Project\src\main\java\service\StockMarketService.java
-C:\Users\noe\Documents\GitHub\M1S2_Distributed_Big_Data_Project\src\main\java\util\MongoDBConnection.java
-C:\Users\noe\Documents\GitHub\M1S2_Distributed_Big_Data_Project\src\main\java\util\RedisClient.java
+C:\Users\trist\OneDrive\Documents\UCA-M1\S2\Big Data for Ai\projet\M1S2_Distributed_Big_Data_Project\src\main\java\app\Application.java
+C:\Users\trist\OneDrive\Documents\UCA-M1\S2\Big Data for Ai\projet\M1S2_Distributed_Big_Data_Project\src\main\java\CacheDAO\GenericCacheDAO.java
+C:\Users\trist\OneDrive\Documents\UCA-M1\S2\Big Data for Ai\projet\M1S2_Distributed_Big_Data_Project\src\main\java\CacheDAO\HoldingCacheDAO.java
+C:\Users\trist\OneDrive\Documents\UCA-M1\S2\Big Data for Ai\projet\M1S2_Distributed_Big_Data_Project\src\main\java\CacheDAO\InvestorCacheDAO.java
+C:\Users\trist\OneDrive\Documents\UCA-M1\S2\Big Data for Ai\projet\M1S2_Distributed_Big_Data_Project\src\main\java\CacheDAO\StockCacheDAO.java
+C:\Users\trist\OneDrive\Documents\UCA-M1\S2\Big Data for Ai\projet\M1S2_Distributed_Big_Data_Project\src\main\java\CacheDAO\StockHistoryCacheDAO.java
+C:\Users\trist\OneDrive\Documents\UCA-M1\S2\Big Data for Ai\projet\M1S2_Distributed_Big_Data_Project\src\main\java\CacheDAO\TransactionCacheDAO.java
+C:\Users\trist\OneDrive\Documents\UCA-M1\S2\Big Data for Ai\projet\M1S2_Distributed_Big_Data_Project\src\main\java\Config\AppConfig.java
+C:\Users\trist\OneDrive\Documents\UCA-M1\S2\Big Data for Ai\projet\M1S2_Distributed_Big_Data_Project\src\main\java\DAO\GenericDAO.java
+C:\Users\trist\OneDrive\Documents\UCA-M1\S2\Big Data for Ai\projet\M1S2_Distributed_Big_Data_Project\src\main\java\DAO\HoldingsDAO.java
+C:\Users\trist\OneDrive\Documents\UCA-M1\S2\Big Data for Ai\projet\M1S2_Distributed_Big_Data_Project\src\main\java\DAO\InvestorDAO.java
+C:\Users\trist\OneDrive\Documents\UCA-M1\S2\Big Data for Ai\projet\M1S2_Distributed_Big_Data_Project\src\main\java\DAO\StockDAO.java
+C:\Users\trist\OneDrive\Documents\UCA-M1\S2\Big Data for Ai\projet\M1S2_Distributed_Big_Data_Project\src\main\java\DAO\StockPriceHistoryDAO.java
+C:\Users\trist\OneDrive\Documents\UCA-M1\S2\Big Data for Ai\projet\M1S2_Distributed_Big_Data_Project\src\main\java\DAO\TransactionDAO.java
+C:\Users\trist\OneDrive\Documents\UCA-M1\S2\Big Data for Ai\projet\M1S2_Distributed_Big_Data_Project\src\main\java\Models\Address.java
+C:\Users\trist\OneDrive\Documents\UCA-M1\S2\Big Data for Ai\projet\M1S2_Distributed_Big_Data_Project\src\main\java\Models\Country.java
+C:\Users\trist\OneDrive\Documents\UCA-M1\S2\Big Data for Ai\projet\M1S2_Distributed_Big_Data_Project\src\main\java\Models\Holding.java
+C:\Users\trist\OneDrive\Documents\UCA-M1\S2\Big Data for Ai\projet\M1S2_Distributed_Big_Data_Project\src\main\java\Models\Investor.java
+C:\Users\trist\OneDrive\Documents\UCA-M1\S2\Big Data for Ai\projet\M1S2_Distributed_Big_Data_Project\src\main\java\Models\Stock.java
+C:\Users\trist\OneDrive\Documents\UCA-M1\S2\Big Data for Ai\projet\M1S2_Distributed_Big_Data_Project\src\main\java\Models\StockPriceHistory.java
+C:\Users\trist\OneDrive\Documents\UCA-M1\S2\Big Data for Ai\projet\M1S2_Distributed_Big_Data_Project\src\main\java\Models\Transaction.java
+C:\Users\trist\OneDrive\Documents\UCA-M1\S2\Big Data for Ai\projet\M1S2_Distributed_Big_Data_Project\src\main\java\Models\TransactionStatus.java
+C:\Users\trist\OneDrive\Documents\UCA-M1\S2\Big Data for Ai\projet\M1S2_Distributed_Big_Data_Project\src\main\java\Models\TransactionTypes.java
+C:\Users\trist\OneDrive\Documents\UCA-M1\S2\Big Data for Ai\projet\M1S2_Distributed_Big_Data_Project\src\main\java\Models\Wallet.java
+C:\Users\trist\OneDrive\Documents\UCA-M1\S2\Big Data for Ai\projet\M1S2_Distributed_Big_Data_Project\src\main\java\Models\WalletType.java
+C:\Users\trist\OneDrive\Documents\UCA-M1\S2\Big Data for Ai\projet\M1S2_Distributed_Big_Data_Project\src\main\java\Routes\Handlers\InvestorsHandler.java
+C:\Users\trist\OneDrive\Documents\UCA-M1\S2\Big Data for Ai\projet\M1S2_Distributed_Big_Data_Project\src\main\java\Routes\Handlers\ReportsHandler.java
+C:\Users\trist\OneDrive\Documents\UCA-M1\S2\Big Data for Ai\projet\M1S2_Distributed_Big_Data_Project\src\main\java\Routes\Handlers\StocksHandler.java
+C:\Users\trist\OneDrive\Documents\UCA-M1\S2\Big Data for Ai\projet\M1S2_Distributed_Big_Data_Project\src\main\java\Routes\Handlers\TransactionsHandler.java
+C:\Users\trist\OneDrive\Documents\UCA-M1\S2\Big Data for Ai\projet\M1S2_Distributed_Big_Data_Project\src\main\java\Routes\Handlers\WalletsHandler.java
+C:\Users\trist\OneDrive\Documents\UCA-M1\S2\Big Data for Ai\projet\M1S2_Distributed_Big_Data_Project\src\main\java\Routes\RestApiServer.java
+C:\Users\trist\OneDrive\Documents\UCA-M1\S2\Big Data for Ai\projet\M1S2_Distributed_Big_Data_Project\src\main\java\Routes\RoutesUtils.java
+C:\Users\trist\OneDrive\Documents\UCA-M1\S2\Big Data for Ai\projet\M1S2_Distributed_Big_Data_Project\src\main\java\Services\crudStockService.java
+C:\Users\trist\OneDrive\Documents\UCA-M1\S2\Big Data for Ai\projet\M1S2_Distributed_Big_Data_Project\src\main\java\Services\HoldingService.java
+C:\Users\trist\OneDrive\Documents\UCA-M1\S2\Big Data for Ai\projet\M1S2_Distributed_Big_Data_Project\src\main\java\Services\InvestorService.java
+C:\Users\trist\OneDrive\Documents\UCA-M1\S2\Big Data for Ai\projet\M1S2_Distributed_Big_Data_Project\src\main\java\Services\StockHistoryService.java
+C:\Users\trist\OneDrive\Documents\UCA-M1\S2\Big Data for Ai\projet\M1S2_Distributed_Big_Data_Project\src\main\java\Services\StockPythonYahooApiService.java
+C:\Users\trist\OneDrive\Documents\UCA-M1\S2\Big Data for Ai\projet\M1S2_Distributed_Big_Data_Project\src\main\java\Services\TransactionService.java
+C:\Users\trist\OneDrive\Documents\UCA-M1\S2\Big Data for Ai\projet\M1S2_Distributed_Big_Data_Project\src\main\java\Utils\DatabaseSeeder.java
+C:\Users\trist\OneDrive\Documents\UCA-M1\S2\Big Data for Ai\projet\M1S2_Distributed_Big_Data_Project\src\main\java\Utils\InteractionSimulator.java
+C:\Users\trist\OneDrive\Documents\UCA-M1\S2\Big Data for Ai\projet\M1S2_Distributed_Big_Data_Project\src\main\java\Utils\JsonUtils.java
+C:\Users\trist\OneDrive\Documents\UCA-M1\S2\Big Data for Ai\projet\M1S2_Distributed_Big_Data_Project\src\main\java\Utils\MongoDBConnection.java
+C:\Users\trist\OneDrive\Documents\UCA-M1\S2\Big Data for Ai\projet\M1S2_Distributed_Big_Data_Project\src\main\java\Utils\RedisCacheService.java
+C:\Users\trist\OneDrive\Documents\UCA-M1\S2\Big Data for Ai\projet\M1S2_Distributed_Big_Data_Project\src\main\java\Utils\RedisClient.java

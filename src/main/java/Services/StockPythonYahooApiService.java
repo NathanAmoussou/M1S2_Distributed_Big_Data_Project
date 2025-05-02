@@ -9,8 +9,18 @@ import org.json.JSONObject;
 
 public class StockPythonYahooApiService {
 
-    private static final String BASE_URL = "http://127.0.0.1:5000"; // Flask API base URL
+    // Read URL from environment variable and provide default
+    private static final String DEFAULT_PYTHON_API_URL = "http://localhost:5000"; // Default for non-docker dev
+    private static final String PYTHON_API_URL_ENV = System.getenv("PYTHON_API_URL");
+    private static final String BASE_URL = (PYTHON_API_URL_ENV != null && !PYTHON_API_URL_ENV.isEmpty())
+            ? PYTHON_API_URL_ENV
+            : DEFAULT_PYTHON_API_URL;
+
     private static final HttpClient client = HttpClient.newHttpClient();
+
+    static {
+        System.out.println("Python API Service URL configured to: " + BASE_URL);
+    }
 
     // Method to get stock info
     public static JSONObject getStockInfo(String stockTicker, String market) throws Exception {
