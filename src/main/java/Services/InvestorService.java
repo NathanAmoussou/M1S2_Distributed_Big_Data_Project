@@ -1,6 +1,7 @@
 package Services;
 
 import CacheDAO.InvestorCacheDAO;
+import CacheDAO.WalletCalculationCacheDAO;
 import DAO.HoldingsDAO;
 import DAO.StockDAO;
 import DAO.TransactionDAO;
@@ -27,6 +28,7 @@ public class InvestorService {
     private final HoldingsDAO holdingsDAO;
     private final StockDAO stockDAO;
     private final TransactionDAO transactionDAO;
+    private final WalletCalculationCacheDAO walletCalcCacheDAO;
 
     public InvestorService(MongoDatabase database) {
         this.database = database;
@@ -35,6 +37,7 @@ public class InvestorService {
         this.holdingsDAO = new HoldingsDAO(database);
         this.stockDAO = new StockDAO(database);
         this.transactionDAO = new TransactionDAO(database);
+        this.walletCalcCacheDAO = new WalletCalculationCacheDAO();
     }
 
     /**
@@ -146,6 +149,10 @@ public class InvestorService {
 
         // Save the updated investor (MongoDB will update the document with the new wallet balance)
         this.updateInvestor(investor);
+
+        if (AppConfig.isEnabled()) {
+            walletCalcCacheDAO.invalidateAllCalculationsForWallet(wallet.getWalletId());
+        }
 
         return wallet;
     }
@@ -391,6 +398,14 @@ public class InvestorService {
     public JSONObject getWalletCurrentValue(String walletIdStr) {
         Wallet wallet = getWalletById(walletIdStr); // Handles validation and not found via exception
 
+        if (AppConfig.isEnabled()) {
+            Optional<JSONObject> cachedValue = walletCalcCacheDAO.findWalletValue(wallet.getWalletId());
+            if (cachedValue.isPresent()) {
+                System.out.println("Wallet " + walletIdStr + " cached: " + cachedValue);
+                return cachedValue.get();
+            }
+        }
+
         BigDecimal cashBalance = wallet.getBalance();
         BigDecimal holdingsValue = BigDecimal.ZERO;
 
@@ -420,6 +435,10 @@ public class InvestorService {
         result.put("totalValue", totalValue);
         result.put("calculationTimestamp", LocalDateTime.now().toString());
 
+        if (AppConfig.isEnabled()) {
+            walletCalcCacheDAO.saveWalletValue(wallet.getWalletId(), result);
+        }
+
         return result;
     }
 
@@ -433,6 +452,14 @@ public class InvestorService {
             throw new IllegalArgumentException("Invalid Wallet ID format: " + walletIdStr);
         }
         ObjectId walletId = new ObjectId(walletIdStr);
+
+        if (AppConfig.isEnabled()) {
+            Optional<JSONObject> cachedPL = walletCalcCacheDAO.findStockPL(walletId, stockTicker);
+            if (cachedPL.isPresent()) {
+                System.out.println("Wallet " + walletIdStr + " cached: " + cachedPL);
+                return cachedPL.get();
+            }
+        }
 
         // Get Current Holding
         Holding currentHolding = holdingsDAO.findByWalletIdAndStockTicker(walletId, stockTicker);
@@ -481,6 +508,10 @@ public class InvestorService {
         result.put("realizedAndUnrealizedProfitLoss", profitLoss);
         result.put("calculationTimestamp", LocalDateTime.now().toString());
 
+        if (AppConfig.isEnabled()) {
+            walletCalcCacheDAO.saveStockPL(walletId, stockTicker, result);
+        }
+
         return result;
     }
 
@@ -488,6 +519,13 @@ public class InvestorService {
         // Validate ID and Get Basic Wallet Info (currency)
         Wallet wallet = getWalletById(walletIdStr); // Handles validation
 
+        if (AppConfig.isEnabled()) {
+            Optional<JSONObject> cachedPL = walletCalcCacheDAO.findGlobalPL(wallet.getWalletId());
+            if (cachedPL.isPresent()) {
+                System.out.println("Wallet " + walletIdStr + " cached: " + cachedPL);
+                return cachedPL.get();
+            }
+        }
         // Get Total Current Holdings Value via DAO Aggregation
         BigDecimal totalCurrentHoldingsValue = holdingsDAO.getTotalHoldingsValueByAggregation(wallet.getWalletId());
 
@@ -522,6 +560,10 @@ public class InvestorService {
         result.put("totalReceivedFromSells", totalMoneyReceivedFromSells);
         result.put("globalRealizedAndUnrealizedProfitLoss", globalProfitLoss);
         result.put("calculationTimestamp", LocalDateTime.now().toString());
+
+        if (AppConfig.isEnabled()) {
+            walletCalcCacheDAO.saveGlobalPL(wallet.getWalletId(), result);
+        }
 
         return result;
     }
