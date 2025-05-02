@@ -50,10 +50,6 @@ public class TransactionService {
     private final WalletCalculationCacheDAO walletCalcCacheDAO;
     private final ReportCacheDAO reportCacheDAO;
 
-    private final WalletCalculationCacheDAO walletCalcCacheDAO;
-    private final ReportCacheDAO reportCacheDAO;
-
-
     private final MongoClient mongoClient;
 
     public TransactionService(MongoDatabase database, MongoClient mongoClient) {
@@ -228,13 +224,13 @@ public class TransactionService {
         try {
             transactionResult = clientSession.withTransaction(() -> {
                 //get Wallet
-                Wallet wallet = investorDAO.getWalletById(clientSession, walletIdStr); // MODIFIED
+                Wallet wallet = investorDAO.getWalletById(clientSession, walletIdStr);
                 if (wallet == null) {
                     throw new RuntimeException("Wallet not found: " + walletIdStr);
                 }
 
                 // get Stock
-                Stock stock = stockDAO.findByStockTicker(clientSession, stockTicker); // MODIFIED
+                Stock stock = stockDAO.findByStockTicker(clientSession, stockTicker);
                 if (stock == null) {
                     throw new RuntimeException("Stock not found: " + stockTicker);
                 }
@@ -434,33 +430,6 @@ public class TransactionService {
 
         return reportData == null ? Collections.emptyList() : reportData;
     }
-    /*
-    }*/
-    public List<Document> getMostTradedStocks(LocalDateTime start, LocalDateTime end, int limit) {
-        if (limit <= 0) limit = 10;
 
-        if (AppConfig.isEnabled()) {
-            Optional<List<Document>> cachedReport = reportCacheDAO.findMostTraded(start, end, limit);
-            if (cachedReport.isPresent()) {
-                System.out.println("Most traded stocks found in cache: " + cachedReport.get().size());
-                return cachedReport.get();
-            }
-        }
-
-        List<Document> reportData = transactionDAO.aggregateStockTransactionCounts(start, end, limit);
-
-        if (reportData != null && AppConfig.isEnabled()) {
-            reportCacheDAO.saveMostTraded(start, end, limit, reportData);
-        }
-
-        return reportData == null ? Collections.emptyList() : reportData;
-    }
-    /*
-    public List<Document> getMostTradedStocks(LocalDateTime start, LocalDateTime end, int limit) {
-        // Add validation for limit if needed (e.g., limit > 0)
-        if (limit <= 0) limit = 10; // Default limit
-        return transactionDAO.aggregateStockTransactionCounts(start, end, limit);
-    }*/
-    }*/
 
 }

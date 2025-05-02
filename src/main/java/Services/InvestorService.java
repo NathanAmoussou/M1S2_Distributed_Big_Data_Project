@@ -36,7 +36,6 @@ public class InvestorService {
     private final StockDAO stockDAO;
     private final TransactionDAO transactionDAO;
     private final WalletCalculationCacheDAO walletCalcCacheDAO;
-    private final WalletCalculationCacheDAO walletCalcCacheDAO;
 
     public InvestorService(MongoDatabase database) {
         this.database = database;
@@ -45,7 +44,6 @@ public class InvestorService {
         this.holdingsDAO = new HoldingsDAO(database);
         this.stockDAO = new StockDAO(database);
         this.transactionDAO = new TransactionDAO(database);
-        this.walletCalcCacheDAO = new WalletCalculationCacheDAO();
         this.walletCalcCacheDAO = new WalletCalculationCacheDAO();
     }
 
@@ -318,10 +316,10 @@ public class InvestorService {
         }
 
         // Fetch investor first to ensure it exists (optional, DAO update can check matchedCount)
-        // Investor existingInvestor = getInvestor(investorId); // Use if you need pre-check
-        // if (existingInvestor == null) {
-        //    throw new RuntimeException("Investor not found: " + investorId);
-        // }
+         Investor existingInvestor = getInvestor(investorId); // Use if you need pre-check
+         if (existingInvestor == null) {
+            throw new RuntimeException("Investor not found: " + investorId);
+         }
 
         Document updateDoc = new Document();
         // Only allow specific fields to be updated via this method
