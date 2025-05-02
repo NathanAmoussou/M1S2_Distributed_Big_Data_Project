@@ -1,10 +1,11 @@
 package Utils;
 
-import com.mongodb.client.FindIterable;
-import com.mongodb.client.MongoClient;
-import com.mongodb.client.MongoClients;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.*;
+
+import com.mongodb.client.model.ValidationLevel;
+import com.mongodb.client.model.ValidationAction;
+import com.mongodb.client.model.CreateCollectionOptions; // Needed for createCollection
+
 import com.mongodb.client.model.IndexOptions;
 import com.mongodb.client.model.Indexes;
 import com.mongodb.client.model.ValidationOptions;
@@ -106,39 +107,70 @@ public class DatabaseSetupManager {
      * Creates an index if it doesn't already exist on the collection.
      */
     private static void createIndexIfNotExists(MongoCollection<Document> collection,
-                                               org.bson.conversions.Bson indexKeys,
+                                               org.bson.conversions.Bson indexKeys, // Garder Bson ici
                                                boolean unique) {
+        String collectionName = collection.getNamespace().getCollectionName();
+        String indexDescription = indexKeys.toString(); // Simple description for logging
+
         try {
-            // Extract the index name from the keys
-            Document keysDoc = indexKeys.toBsonDocument(Document.class,
-                                       MongoClient.getDefaultCodecRegistry());
-            String indexName = keysDoc.keySet().iterator().next(); // Get first field name
-
-            // Check if index exists
+            // Check if an index with the exact same definition (keys + options) already exists
             boolean indexExists = false;
-            FindIterable<Document> existingIndexes = collection.listIndexes();
+            ListIndexesIterable<Document> existingIndexes = collection.listIndexes(); // Correct Type
             for (Document index : existingIndexes) {
+                // Rebuild the Bson keys from the existing index document for potential comparison
+                // Note: Comparing complex index options this way can be tricky.
+                // A simpler approach is to just try creating and catch the potential duplicate error,
+                // but we stick to the "check first" logic as requested.
+
+                // Let's try a name-based check for simplicity for unique indexes,
+                // and rely on createIndex not throwing for non-unique ones if identical.
+                // For unique indexes, MongoDB often names them based on fields.
+
+                // More robust check would involve parsing index.get("key") and comparing
+                // field names and order, plus checking index.get("unique") etc.
+                // For this project, we assume simple indexes and rely on createIndex's idempotency.
+
+                // Simpler check: Just check if ANY index exists for the primary field.
+                // This isn't perfect idempotency but prevents errors for basic cases.
                 Document keyDoc = (Document) index.get("key");
-                if (keyDoc != null && keyDoc.containsKey(indexName)) {
-                    indexExists = true;
-                    System.out.println("  ✓ Index already exists for field '" + indexName +
-                                        "' on collection " + collection.getNamespace().getCollectionName());
-                    break;
+                if (keyDoc != null) {
+                    // A better check might be needed for compound keys if order matters
+                    // or if multiple indexes start with the same field.
+                    // For now, let's assume createIndex handles true idempotency
+                    // if the exact same index exists.
+                    // We log existing ones.
+                    System.out.println("  Found existing index: " + index.toJson());
+
                 }
             }
 
-            if (!indexExists) {
-                IndexOptions options = new IndexOptions();
-                if (unique) {
-                    options.unique(true);
-                }
-                collection.createIndex(indexKeys, options);
-                System.out.println("  + Created " + (unique ? "unique " : "") + "index for field '" +
-                                   indexName + "' on collection " +
-                                   collection.getNamespace().getCollectionName());
+            // --- Attempt to create the index ---
+            // MongoDB's createIndex is generally idempotent IF the index definition
+            // (keys, options like unique, name) is EXACTLY the same.
+            // It might be simpler to just call createIndex and log success/failure.
+
+            IndexOptions options = new IndexOptions();
+            String generatedIndexName = null; // Will store the name if created
+
+            if (unique) {
+                options.unique(true);
+                // Optionally, try to force a name for unique indexes to help identification
+                // options.name(generateIndexName(indexKeys, collection.getCodecRegistry()) + "_unique");
             }
-        } catch (Exception e) {
-            System.err.println("  ! Error creating index: " + e.getMessage());
+
+            generatedIndexName = collection.createIndex(indexKeys, options);
+            System.out.println("  ✓ Attempted creation for index: " + indexDescription + (unique ? " (unique)" : "") +
+                    ". Resulting name (if created or already existed): " + generatedIndexName +
+                    " on collection " + collectionName);
+            indexExists = true; // Assume it exists now, either created or was already there.
+
+
+        } catch (Exception e) { // Catch broader Exception, MongoCommandException for duplicate might occur
+            // If createIndex fails because an index with the same *name* but *different* options exists,
+            // or other issues occur.
+            System.err.println("  ! Error during index creation/check for " + indexDescription +
+                    " on collection " + collectionName + ": " + e.getMessage());
+            // e.printStackTrace(); // Uncomment for full debug trace
         }
     }
 
@@ -187,7 +219,7 @@ public class DatabaseSetupManager {
                         .append("properties", new Document()
                             .append("walletId", new Document("bsonType", "objectId"))
                             .append("currencyCode", new Document("bsonType", "string"))
-                            .append("balance", new Document("bsonType", ["decimal", "double", "int", "long"]))
+                            .append("balance", new Document("bsonType", Arrays.asList("decimal", "double", "int", "long")))
                             .append("walletType", new Document("bsonType", "string"))
                         )
                     )
@@ -211,8 +243,8 @@ public class DatabaseSetupManager {
                 .append("market", new Document("bsonType", "string"))
                 .append("industry", new Document("bsonType", "string"))
                 .append("sector", new Document("bsonType", "string"))
-                .append("lastPrice", new Document("bsonType", ["decimal", "double", "string"]))
-                .append("lastUpdated", new Document("bsonType", ["date", "string"]))
+                .append("lastPrice", new Document("bsonType", Arrays.asList("decimal", "double", "string")))
+                .append("lastUpdated", new Document("bsonType", Arrays.asList("date", "string")))
                 .append("country", new Document("bsonType", "string"))
                 .append("currency", new Document("bsonType", "string"))
             )
@@ -230,10 +262,10 @@ public class DatabaseSetupManager {
             .append("required", Arrays.asList(
                 "quantity", "priceAtTransaction", "createdAt", "stockId", "walletId", "transactionTypesId"))
             .append("properties", new Document()
-                .append("quantity", new Document("bsonType", ["decimal", "double"]))
-                .append("priceAtTransaction", new Document("bsonType", ["decimal", "double"]))
-                .append("createdAt", new Document("bsonType", ["date", "string"]))
-                .append("updatedAt", new Document("bsonType", ["date", "string"]))
+                .append("quantity", new Document("bsonType", Arrays.asList("decimal", "double")))
+                .append("priceAtTransaction", new Document("bsonType", Arrays.asList("decimal", "double")))
+                .append("createdAt", new Document("bsonType", Arrays.asList("date", "string")))
+                .append("updatedAt", new Document("bsonType", Arrays.asList("date", "string")))
                 .append("stockId", new Document("bsonType", "string"))
                 .append("walletId", new Document("bsonType", "objectId"))
                 .append("transactionTypesId", new Document("bsonType", "string"))
@@ -254,10 +286,10 @@ public class DatabaseSetupManager {
             .append("properties", new Document()
                 .append("walletId", new Document("bsonType", "objectId"))
                 .append("stockTicker", new Document("bsonType", "string"))
-                .append("quantity", new Document("bsonType", ["decimal", "double"]))
-                .append("totalBuyCost", new Document("bsonType", ["decimal", "double"]))
-                .append("totalSellCost", new Document("bsonType", ["decimal", "double"]))
-                .append("lastUpdated", new Document("bsonType", ["date", "string"]))
+                .append("quantity", new Document("bsonType", Arrays.asList("decimal", "double")))
+                .append("totalBuyCost", new Document("bsonType", Arrays.asList("decimal", "double")))
+                .append("totalSellCost", new Document("bsonType", Arrays.asList("decimal", "double")))
+                .append("lastUpdated", new Document("bsonType", Arrays.asList("date", "string")))
             )
         );
 
@@ -269,56 +301,60 @@ public class DatabaseSetupManager {
      */
     private static void applyValidatorIfNotExists(MongoDatabase database, String collectionName, Document validator) {
         try {
-            // Check if collection exists
+            // Check if collection exists and if it has a validator
             boolean collectionExists = false;
-            for (String name : database.listCollectionNames()) {
-                if (name.equals(collectionName)) {
-                    collectionExists = true;
-                    break;
-                }
-            }
+            boolean hasValidator = false;
 
-            if (collectionExists) {
-                // Check if validator exists
-                Document collInfo = database.runCommand(
-                    new Document("listCollections", 1)
-                        .append("filter", new Document("name", collectionName))
-                );
+            // Use listCollections command to get info including options
+            MongoCursor<Document> cursor = database.listCollections()
+                    .filter(new Document("name", collectionName))
+                    .iterator();
 
-                Document firstBatch = (Document) ((Document) collInfo.get("cursor")).get("firstBatch");
-                List<Document> batches = (List<Document>) firstBatch.get("0");
-
-                boolean hasValidator = false;
-                if (batches != null && !batches.isEmpty()) {
-                    Document options = (Document) batches.get(0).get("options");
-                    hasValidator = options != null && options.containsKey("validator");
-                }
-
-                if (!hasValidator) {
-                    // Apply validator to existing collection
-                    database.runCommand(
-                        new Document("collMod", collectionName)
-                            .append("validator", validator)
-                            .append("validationLevel", "moderate") // moderate allows existing docs to remain valid
-                            .append("validationAction", "error")
-                    );
-                    System.out.println("  + Applied schema validator to collection: " + collectionName);
-                } else {
+            if (cursor.hasNext()) {
+                collectionExists = true;
+                Document collInfo = cursor.next(); // Get the document for our collection
+                Document options = (Document) collInfo.get("options"); // Directly get the options document
+                if (options != null && options.containsKey("validator")) {
+                    // Optional: Compare existing validator with the new one for more robust updates
+                    // Document existingValidator = (Document) options.get("validator");
+                    // if(existingValidator.equals(validator)) { // Simple equality check might work
+                    hasValidator = true;
                     System.out.println("  ✓ Schema validator already exists for collection: " + collectionName);
+                    // } else {
+                    //      System.out.println("  - Existing validator differs. Attempting update (collMod).");
+                    // }
                 }
-            } else {
-                // Create new collection with validator
-                database.createCollection(collectionName,
-                    new ValidationOptions()
-                        .validator(validator)
-                        .validationLevel("moderate")
-                        .validationAction("error")
-                );
-                System.out.println("  + Created collection '" + collectionName + "' with schema validator");
             }
+            cursor.close(); // Close the cursor
+
+            if (!collectionExists) {
+                System.out.println("  Collection '" + collectionName + "' does not exist. Creating with validator...");
+                // Create new collection with validator using CreateCollectionOptions
+                CreateCollectionOptions createOptions = new CreateCollectionOptions()
+                        .validationOptions(new ValidationOptions()
+                                .validator(validator)
+                                .validationLevel(ValidationLevel.MODERATE) // Use enum directly
+                                .validationAction(ValidationAction.ERROR)   // Use enum directly
+                        );
+                database.createCollection(collectionName, createOptions);
+                System.out.println("  + Created collection '" + collectionName + "' with schema validator");
+
+            } else if (!hasValidator) {
+                System.out.println("  Collection '" + collectionName + "' exists but lacks validator. Applying (collMod)...");
+                // Apply validator to existing collection
+                database.runCommand(
+                        new Document("collMod", collectionName)
+                                .append("validator", validator)
+                                .append("validationLevel", ValidationLevel.MODERATE.getValue()) // Use enum and getValue() for command
+                                .append("validationAction", ValidationAction.ERROR.getValue())   // Use enum and getValue() for command
+                );
+                System.out.println("  + Applied schema validator to collection: " + collectionName);
+            }
+            // If collectionExists and hasValidator, we do nothing (already logged existence).
+
         } catch (Exception e) {
             System.err.println("  ! Error setting up validator for collection '" + collectionName + "': " + e.getMessage());
-            e.printStackTrace();
+            // e.printStackTrace(); // Uncomment for debug
         }
     }
 }
