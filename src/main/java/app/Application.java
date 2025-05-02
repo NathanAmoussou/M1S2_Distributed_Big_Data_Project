@@ -70,6 +70,7 @@ public class Application {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+
         if (Config.AppConfig.isEnabled()) {
             crudStockService stockService = new crudStockService(database);
             startDailyHistoryCacheRefresh(stockService, historyDao);
@@ -247,7 +248,7 @@ public class Application {
         long initialDelaySeconds = initialDelay.getSeconds();
         long periodSeconds = TimeUnit.HOURS.toSeconds(1);
 
-        System.out.println("Scheduling daily history cache refresh. Next run at: " + nextRun);
+        System.out.println("Programming the hourly refresh of the history cache.  Next run at: " + nextRun);
         System.out.println("Initial delay: " + initialDelaySeconds + " seconds. Period: " + periodSeconds + " seconds.");
 
         scheduler.scheduleAtFixedRate(refreshTask, initialDelaySeconds, periodSeconds, TimeUnit.SECONDS);

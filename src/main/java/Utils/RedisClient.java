@@ -9,12 +9,12 @@ public class RedisClient {
     private RedisClient() {
         JedisClientConfig config = DefaultJedisClientConfig.builder()
                 .user("default")
-                .password("1CXFwOcDEeS5osBZ8jrFD8ugxQGlF9wM")
+                .password("DzCxBUckZYdg5rNlysWQYPklpQC4iQtf")
                 .build();
 
         try {
             this.jedis = new UnifiedJedis(
-                    new HostAndPort("redis-13268.c339.eu-west-3-1.ec2.redns.redis-cloud.com", 13268),
+                    new HostAndPort("redis-14039.c80.us-east-1-2.ec2.redns.redis-cloud.com", 14039),
                     config
             );
         } catch (Exception e) {
