@@ -72,7 +72,7 @@ public class InvestorService {
         // Cache the investor if enabled
         if (AppConfig.isEnabled() && investor.getInvestorId() != null) {
             investorCacheDAO.save(investor, AppConfig.CACHE_TTL);
-            System.out.println("Investor created: " + investor+ " and has been cached.");
+            // System.out.println("Investor created: " + investor+ " and has been cached.");
         }
 
         return investor;

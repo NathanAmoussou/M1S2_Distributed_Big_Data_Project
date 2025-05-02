@@ -1,153 +1,172 @@
-# docker-compose.yml (Final Automated Version)
-
 networks:
   app-network:
 
 volumes:
-  configsvr_data:
-  shard1_data:
-  shard2_data:
-  shard3_data:
+  config1_data:
+  config2_data:
+  config3_data:
+  shard1a_data:
+  shard1b_data:
+  shard1c_data:
+  shard2a_data:
+  shard2b_data:
+  shard2c_data:
+  shard3a_data:
+  shard3b_data:
+  shard3c_data:
 
 services:
-  # --- Config Server Replica Set (1 Node) ---
-  mongo-configsvr:
-    image: mongo:6.0
-    container_name: mongo-configsvr
-    command: ["mongod", "--configsvr", "--replSet", "rsConfig", "--port", "27017", "--bind_ip_all"]
-    networks:
-      - app-network
-    volumes:
-      - configsvr_data:/data/db
-    healthcheck: # Add back healthcheck - setup will wait for it
-      test: echo 'db.runCommand("ping").ok' | mongosh --quiet
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 20s
 
-  # --- Shard 1 Replica Set (1 Node) ---
-  mongo-shard1:
+  config1:
     image: mongo:6.0
-    container_name: mongo-shard1
-    command: ["mongod", "--shardsvr", "--replSet", "rsShard1", "--port", "27017", "--bind_ip_all"]
-    networks:
-      - app-network
-    volumes:
-      - shard1_data:/data/db
-    healthcheck:
-      test: echo 'db.runCommand("ping").ok' | mongosh --quiet
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 20s
+    container_name: config1
+    command: ["mongod", "--configsvr", "--replSet", "configReplSet", "--port", "27017", "--bind_ip_all"]
+    volumes: [config1_data:/data/db]
+    networks: [app-network]
 
-  # --- Shard 2 Replica Set (1 Node) ---
-  mongo-shard2:
+  config2:
     image: mongo:6.0
-    container_name: mongo-shard2
-    command: ["mongod", "--shardsvr", "--replSet", "rsShard2", "--port", "27017", "--bind_ip_all"]
-    networks:
-      - app-network
-    volumes:
-      - shard2_data:/data/db
-    healthcheck:
-      test: echo 'db.runCommand("ping").ok' | mongosh --quiet
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 20s
+    container_name: config2
+    command: ["mongod", "--configsvr", "--replSet", "configReplSet", "--port", "27017", "--bind_ip_all"]
+    volumes: [config2_data:/data/db]
+    networks: [app-network]
 
-  # --- Shard 3 Replica Set (1 Node) ---
-  mongo-shard3:
+  config3:
     image: mongo:6.0
-    container_name: mongo-shard3
-    command: ["mongod", "--shardsvr", "--replSet", "rsShard3", "--port", "27017", "--bind_ip_all"]
-    networks:
-      - app-network
-    volumes:
-      - shard3_data:/data/db
-    healthcheck:
-      test: echo 'db.runCommand("ping").ok' | mongosh --quiet
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 20s
+    container_name: config3
+    command: ["mongod", "--configsvr", "--replSet", "configReplSet", "--port", "27017", "--bind_ip_all"]
+    volumes: [config3_data:/data/db]
+    networks: [app-network]
 
-  # --- Mongos Router ---
-  mongo-mongos:
+  shard1a:
     image: mongo:6.0
-    container_name: mongo-mongos
-    depends_on: # Depends on config server starting
-      mongo-configsvr: { condition: service_started } # Script waits for health/primary
-    command: ["mongos", "--configdb", "rsConfig/mongo-configsvr:27017", "--port", "27017", "--bind_ip_all"]
+    container_name: shard1a
+    command: ["mongod", "--shardsvr", "--replSet", "shard1ReplSet", "--port", "27018", "--bind_ip_all"]
+    volumes: [shard1a_data:/data/db]
+    networks: [app-network]
+
+  shard1b:
+    image: mongo:6.0
+    container_name: shard1b
+    command: ["mongod", "--shardsvr", "--replSet", "shard1ReplSet", "--port", "27018", "--bind_ip_all"]
+    volumes: [shard1b_data:/data/db]
+    networks: [app-network]
+
+  shard1c:
+    image: mongo:6.0
+    container_name: shard1c
+    command: ["mongod", "--shardsvr", "--replSet", "shard1ReplSet", "--port", "27018", "--bind_ip_all"]
+    volumes: [shard1c_data:/data/db]
+    networks: [app-network]
+
+  shard2a:
+    image: mongo:6.0
+    container_name: shard2a
+    command: ["mongod", "--shardsvr", "--replSet", "shard2ReplSet", "--port", "27019", "--bind_ip_all"]
+    volumes: [shard2a_data:/data/db]
+    networks: [app-network]
+
+  shard2b:
+    image: mongo:6.0
+    container_name: shard2b
+    command: ["mongod", "--shardsvr", "--replSet", "shard2ReplSet", "--port", "27019", "--bind_ip_all"]
+    volumes: [shard2b_data:/data/db]
+    networks: [app-network]
+
+  shard2c:
+    image: mongo:6.0
+    container_name: shard2c
+    command: ["mongod", "--shardsvr", "--replSet", "shard2ReplSet", "--port", "27019", "--bind_ip_all"]
+    volumes: [shard2c_data:/data/db]
+    networks: [app-network]
+
+  shard3a:
+    image: mongo:6.0
+    container_name: shard3a
+    command: ["mongod", "--shardsvr", "--replSet", "shard3ReplSet", "--port", "27020", "--bind_ip_all"]
+    volumes: [shard3a_data:/data/db]
+    networks: [app-network]
+
+  shard3b:
+    image: mongo:6.0
+    container_name: shard3b
+    command: ["mongod", "--shardsvr", "--replSet", "shard3ReplSet", "--port", "27020", "--bind_ip_all"]
+    volumes: [shard3b_data:/data/db]
+    networks: [app-network]
+
+  shard3c:
+    image: mongo:6.0
+    container_name: shard3c
+    command: ["mongod", "--shardsvr", "--replSet", "shard3ReplSet", "--port", "27020", "--bind_ip_all"]
+    volumes: [shard3c_data:/data/db]
+    networks: [app-network]
+
+  mongos:
+    image: mongo:6.0
+    container_name: mongos
+    depends_on: [config1]
     ports:
-      - "27017:27017"
-    networks:
-      - app-network
-    healthcheck:
-      test: echo 'db.runCommand("ping").ok' | mongosh --quiet
-      interval: 15s
-      timeout: 10s
-      retries: 10
-      start_period: 120s # Give ample time for setup script to finish
+      - "27021:27017"
+    command: ["mongos", "--configdb", "configReplSet/config1:27017,config2:27017,config3:27017", "--port", "27017", "--bind_ip_all"]
+    networks: [app-network]
 
-  # --- MongoDB Cluster Setup Service ---
   mongo-setup:
-    image: mongo:6.0 # Needs mongosh client
+    image: mongo:6.0
     container_name: mongo-setup
-    depends_on: # Wait for containers to START, script handles readiness/primaries
-      mongo-configsvr: { condition: service_started }
-      mongo-shard1: { condition: service_started }
-      mongo-shard2: { condition: service_started }
-      mongo-shard3: { condition: service_started }
-      mongo-mongos: { condition: service_started }
+    depends_on:
+      - mongos
+      - config1
+      - config2
+      - config3
+      - shard1a
+      - shard1b
+      - shard1c
+      - shard2a
+      - shard2b
+      - shard2c
+      - shard3a
+      - shard3b
+      - shard3c
     volumes:
-      - ./setup_mongo_cluster.sh:/setup/setup_mongo_cluster.sh
-    networks:
-      - app-network
-    # Runs the setup script once and then exits
-    command: ["bash", "/setup/setup_mongo_cluster.sh"]
-    # restart: 'no' # Default behavior
+      - ./init-cluster.sh:/init-cluster.sh
+    command: ["bash", "/init-cluster.sh"]
+    networks: [app-network]
 
-  # --- Python Flask API Service ---
   python-api:
     build: ./pythonApiYahooFinance
     container_name: python-api
-    ports:
-      - "5000:5000"
-    networks:
-      - app-network
+    ports: ["5000:5000"]
+    networks: [app-network]
     restart: unless-stopped
-
+    
   # --- Java Application Service ---
-  java-app:
-    build: .
-    container_name: java-app
-    depends_on:
-      mongo-setup: # *** Depends on setup completing successfully ***
-        condition: service_completed_successfully
-      mongo-mongos: # *** ALSO depends on mongos being healthy AFTER setup ***
-        condition: service_healthy
-      python-api:
-        condition: service_started # Assuming python api starts reasonably fast
-    ports:
-      - "8000:8000"
-    networks:
-      - app-network
-    environment:
-      MONGO_URI: "mongodb://mongo-mongos:27017" # Use service name
-      MONGO_DB_NAME: "gestionBourse"
-      PYTHON_API_URL: "http://python-api:5000"  # Use service name
-      ENABLE_REDIS_CACHE: "true" # Or false, or use a .env file
-    restart: on-failure
-    command: >
-      bash -c '
-      if [ "$ENABLE_REDIS_CACHE" = "true" ]; then
-        echo "INFO: Redis cache ENABLED via environment variable."
-        exec java -jar ./app.jar --enableRedisCache
-      else
-        echo "INFO: Redis cache DISABLED via environment variable."
-        exec java -jar ./app.jar
-      fi
-      '
+  # java-app:
+  #   build: .
+  #   container_name: java-app
+  #   depends_on:
+  #     mongo-setup:
+  #       condition: service_completed_successfully
+  #     mongos:
+  #       condition: service_started
+  #     python-api:
+  #       condition: service_started
+  #   ports:
+  #     - "8000:8000"
+  #   networks:
+  #     - app-network
+  #   environment:
+  #     MONGO_URI: "mongodb://mongos:27017"
+  #     MONGO_DB_NAME: "gestionBourse"
+  #     PYTHON_API_URL: "http://python-api:5000"
+  #     ENABLE_REDIS_CACHE: "true"
+  #   restart: on-failure
+  #   command: >
+  #     bash -c '
+  #     if [ "$ENABLE_REDIS_CACHE" = "true" ]; then
+  #       echo "INFO: Redis cache ENABLED via environment variable."
+  #       exec java -jar ./app.jar --enableRedisCache
+  #     else
+  #       echo "INFO: Redis cache DISABLED via environment variable."
+  #       exec java -jar ./app.jar
+  #     fi
+  #     '

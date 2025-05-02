@@ -2,6 +2,7 @@ package Models;
 
 import org.bson.types.ObjectId;
 import org.json.JSONObject;
+
 import Utils.JsonUtils;
 
 public class Address {
@@ -26,7 +27,7 @@ public class Address {
 
     // json constructor
     public Address(JSONObject json) {
-        System.out.println("DEBUG : " + json.toString());
+        // System.out.println("DEBUG : " + json.toString());
         this.addressId = JsonUtils.getObjectId(json, "addressId");
         this.number = json.optString("number", "");
         this.street = json.getString("street");

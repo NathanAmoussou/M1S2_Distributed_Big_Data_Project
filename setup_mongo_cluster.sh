@@ -23,7 +23,7 @@ wait_for_mongo_tcp() {
               exit 1
             fi
             echo "Attempt $retry_count/$max_retries (mongosh): $service_name ($host:$port) not reachable yet. Retrying in 5 seconds..."
-            sleep 5
+            sleep 15
       done
   else
       while ! nc -z $host $port > /dev/null 2>&1; do
@@ -33,7 +33,7 @@ wait_for_mongo_tcp() {
           exit 1
         fi
         echo "Attempt $retry_count/$max_retries (TCP): $service_name ($host:$port) not reachable yet. Retrying in 5 seconds..."
-        sleep 5
+        sleep 15
       done
   fi
   echo "$service_name ($host:$port) is reachable."
@@ -61,7 +61,7 @@ wait_for_primary() {
             exit 1
         fi
         echo "Attempt $retry_count/$max_retries: PRIMARY not found for $service_name ($host:$port). Retrying in 6 seconds..."
-        sleep 6
+        sleep 16
     done
 }
 
@@ -78,11 +78,11 @@ echo "**********************************************"
 echo "Initiating Replica Sets..."
 echo "**********************************************"
 mongosh --host mongo-configsvr:27017 --eval ' try { rs.initiate({_id: "rsConfig", configsvr: true, members: [{_id: 0, host: "mongo-configsvr:27017"}]}); print("rsConfig initiate command sent."); } catch (e) { if (e.codeName === "AlreadyInitialized" || e.codeName === "NamespaceExists") { print("rsConfig already initialized."); } else { print("Error initiating rsConfig:", e); quit(1); } } ' || { echo "FATAL: Failed to execute rs.initiate on configsvr"; exit 1; }
-sleep 2
+sleep 12
 mongosh --host mongo-shard1:27017 --eval ' try { rs.initiate({_id: "rsShard1", members: [{_id: 0, host: "mongo-shard1:27017"}]}); print("rsShard1 initiate command sent."); } catch (e) { if (e.codeName === "AlreadyInitialized" || e.codeName === "NamespaceExists") { print("rsShard1 already initialized."); } else { print("Error initiating rsShard1:", e); quit(1); } } ' || { echo "FATAL: Failed to execute rs.initiate on shard1"; exit 1; }
-sleep 2
+sleep 12
 mongosh --host mongo-shard2:27017 --eval ' try { rs.initiate({_id: "rsShard2", members: [{_id: 0, host: "mongo-shard2:27017"}]}); print("rsShard2 initiate command sent."); } catch (e) { if (e.codeName === "AlreadyInitialized" || e.codeName === "NamespaceExists") { print("rsShard2 already initialized."); } else { print("Error initiating rsShard2:", e); quit(1); } } ' || { echo "FATAL: Failed to execute rs.initiate on shard2"; exit 1; }
-sleep 2
+sleep 12
 mongosh --host mongo-shard3:27017 --eval ' try { rs.initiate({_id: "rsShard3", members: [{_id: 0, host: "mongo-shard3:27017"}]}); print("rsShard3 initiate command sent."); } catch (e) { if (e.codeName === "AlreadyInitialized" || e.codeName === "NamespaceExists") { print("rsShard3 already initialized."); } else { print("Error initiating rsShard3:", e); quit(1); } } ' || { echo "FATAL: Failed to execute rs.initiate on shard3"; exit 1; }
 
 

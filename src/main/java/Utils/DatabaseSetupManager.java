@@ -22,35 +22,51 @@ import java.util.List;
  */
 public class DatabaseSetupManager {
 
-    private static final String MONGO_URI = "mongodb://localhost:27017";
-    private static final String DB_NAME = "gestionBourse";
+    private static final String STANDALONE_MONGO_URI = "mongodb://localhost:27017";
+    private static final String STANDALONE_DB_NAME = "gestionBourse";
 
-    public static void main(String[] args) {
-        System.out.println("Starting Database Setup Manager...");
+    // *** ADD THIS NEW METHOD ***
+    public static void runSetup(MongoDatabase database) {
+        System.out.println("Starting Database Setup Manager logic...");
+        // NO MongoClient creation here - use the passed 'database' object
+        try {
+            System.out.println("Using provided database connection: " + database.getName());
 
-        try (MongoClient mongoClient = MongoClients.create(MONGO_URI)) {
-            MongoDatabase database = mongoClient.getDatabase(DB_NAME);
-
-            System.out.println("Connected to database: " + DB_NAME);
-
-            // Setup indexes for all collections
+            // Setup indexes (calls remain the same, they already take database)
             setupInvestorsIndexes(database);
             setupStocksIndexes(database);
             setupTransactionsIndexes(database);
             setupHoldingsIndexes(database);
+//             setupStockPriceHistoryIndexes(database);
 
-            // Setup schema validators for all collections
+            // Setup validators (calls remain the same)
             setupInvestorsValidator(database);
             setupStocksValidator(database);
             setupTransactionsValidator(database);
             setupHoldingsValidator(database);
+//            setupStockPriceHistoryValidator(database);
 
-            System.out.println("Database setup completed successfully.");
+            System.out.println("Database setup logic completed successfully.");
         } catch (Exception e) {
-            System.err.println("Error during database setup: " + e.getMessage());
-            e.printStackTrace();
+            System.err.println("Error during database setup logic: " + e.getMessage());
+            throw new RuntimeException("Database setup failed", e);
         }
     }
+
+    // for standalone testing
+    public static void main(String[] args) {
+        System.out.println("Starting Database Setup Manager (Standalone)...");
+        try (MongoClient mongoClient = MongoClients.create(STANDALONE_MONGO_URI)) { // Connect
+            MongoDatabase database = mongoClient.getDatabase(STANDALONE_DB_NAME); // Get DB
+            runSetup(database); // <<<< CALL THE NEW METHOD
+        } catch (Exception e) {
+            System.err.println("Error during standalone database setup: " + e.getMessage());
+            e.printStackTrace();
+            System.exit(1);
+        }
+        // Client closed automatically by try-with-resources
+    }
+
 
     // ====== INDEX MANAGEMENT METHODS ======
 
@@ -61,8 +77,8 @@ public class DatabaseSetupManager {
         // Username index (unique)
         createIndexIfNotExists(collection, Indexes.ascending("username"), true);
 
-        // Email index (unique)
-        createIndexIfNotExists(collection, Indexes.ascending("email"), true);
+        // Email index (unique) -> NOT POSSIBLE WITH CLUSTER AND SHARD ONLY THE SHARD KEY CAN BE UNIQUE
+//        createIndexIfNotExists(collection, Indexes.ascending("email"), true);
     }
 
     private static void setupStocksIndexes(MongoDatabase database) {

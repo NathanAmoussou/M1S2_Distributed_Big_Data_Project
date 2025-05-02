@@ -1,14 +1,15 @@
 package Models;
 
-import org.bson.types.ObjectId;
-import org.json.JSONObject;
-import Utils.JsonUtils;
-
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import org.bson.types.ObjectId;
+import org.json.JSONObject;
+
+import Utils.JsonUtils;
 
 public class Investor {
     private ObjectId investorId;
@@ -99,7 +100,7 @@ public class Investor {
         // Convert addresses to Address objects
         this.addresses = json.getJSONArray("addresses").toList().stream()
                 .map(obj -> {
-                    System.out.println("Type of address object: " + obj.getClass().getName());
+                    // System.out.println("Type of address object: " + obj.getClass().getName());
                     try {
                         JSONObject addressJson = new JSONObject((Map) obj);
                         return new Address(addressJson);

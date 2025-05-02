@@ -32,8 +32,8 @@ import java.math.RoundingMode;
  */
 public class InteractionSimulator {
     // Configuration
-    private static final String MONGO_URI = "mongodb://localhost:27017";
-    private static final String DB_NAME = "gestionBourse";
+    private static final String STANDALONE_MONGO_URI = "mongodb://localhost:27017";
+    private static final String STANDALONE_DB_NAME = "gestionBourse";
     private static final String API_BASE_URL = "http://localhost:8000";
 
     // Number of investors to process
@@ -48,15 +48,14 @@ public class InteractionSimulator {
     // Random generator for simulation
     private static final Random random = new Random();
 
-    public static void main(String[] args) {
+    public static void runSimulation(MongoDatabase database) {
         System.out.println("========== Starting Interaction Simulator ==========");
 
         List<String> stockTickers = new ArrayList<>();
         List<InvestorWallet> investorWallets = new ArrayList<>();
 
         // Step 1: Connect to MongoDB and fetch initial data
-        try (MongoClient mongoClient = MongoClients.create(MONGO_URI)) {
-            MongoDatabase database = mongoClient.getDatabase(DB_NAME);
+        try {
 
             // Fetch stock tickers
             stockTickers = fetchStockTickers(database);
@@ -100,6 +99,20 @@ public class InteractionSimulator {
         System.out.println("\n========== Interaction Simulation Completed ==========");
         System.out.println("Successfully processed " + successfulInvestors + " out of " +
                            investorWallets.size() + " investors.");
+    }
+
+
+    // *** MODIFY EXISTING main (Optional, for standalone testing) ***
+    public static void main(String[] args) {
+        System.out.println("========== Starting Interaction Simulator (Standalone) ==========");
+        try (MongoClient mongoClient = MongoClients.create(STANDALONE_MONGO_URI)) { // Connect
+            MongoDatabase database = mongoClient.getDatabase(STANDALONE_DB_NAME); // Get DB
+            runSimulation(database);
+        } catch (Exception e) {
+            System.err.println("Error during standalone simulation: " + e.getMessage());
+            e.printStackTrace();
+        }
+        // Client closed automatically by try-with-resources
     }
 
     /**
