@@ -1,5 +1,6 @@
 package Utils;
 
+import redis.clients.jedis.Jedis;
 import redis.clients.jedis.UnifiedJedis;
 
 public class RedisCacheService {
@@ -30,6 +31,19 @@ public class RedisCacheService {
      */
     public static void deleteCache(String key) {
         jedis.del(key);
+    }
+
+    public static void clearAll() {
+        System.out.println("Attempting to clear Redis cache (FLUSHDB)...");
+        try {
+            UnifiedJedis jedis = RedisClient.getInstance().getJedis();
+            // ca marche pas
+           // String result = jedis.flushDB();
+          //  System.out.println("Redis FLUSHDB command executed. Result: " + result); // Doit retourner "OK"
+        } catch (Exception e) {
+            System.err.println("REDIS ERROR - Failed to execute FLUSHDB on Redis: " + e.getMessage());
+            throw new RuntimeException("Failed to clear Redis cache", e);
+        }
     }
 
     // CORRIGE : Conversion des objets en JSON et vice versa est directement fait dans les classes model
