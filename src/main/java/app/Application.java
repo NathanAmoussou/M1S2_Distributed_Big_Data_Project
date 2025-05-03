@@ -154,11 +154,11 @@ public class Application {
 
             // START OTHER BACKGROUND TASKS (LIKE CACHE REFRESH)
             System.out.println("\nConfiguring background tasks...");
-            if (Config.AppConfig.isEnabled()) {
+           // if (Config.AppConfig.isEnabled()) {
                 startDailyHistoryCacheRefresh(stockService, historyDao);
-            } else {
-                System.out.println("Daily history cache refresh task DISABLED.");
-            }
+           // } else {
+            //    System.out.println("Daily history cache refresh task DISABLED.");
+          //  }
 
             // COMPLETION
             System.out.println("\n========================================");

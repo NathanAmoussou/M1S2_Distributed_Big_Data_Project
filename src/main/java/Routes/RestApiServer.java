@@ -3,16 +3,11 @@ package Routes;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 
-import Routes.Handlers.TransactionsHandler;
+import Routes.Handlers.*;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoDatabase;
 import com.sun.net.httpserver.HttpServer;
-
-import Routes.Handlers.InvestorsHandler;
-import Routes.Handlers.WalletsHandler;
-import Routes.Handlers.StocksHandler;
-import Routes.Handlers.ReportsHandler;
 
 import Services.HoldingService;
 import Services.InvestorService;
@@ -52,6 +47,7 @@ public class RestApiServer {
 
         server.createContext("/reports", new ReportsHandler(transactionService));
 
+        server.createContext("/admin/cache/", new AdminHandler());
         // default executor
         server.setExecutor(java.util.concurrent.Executors.newCachedThreadPool());
     }
