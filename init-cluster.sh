@@ -2,13 +2,13 @@
 
 echo "Initialisation du cluster MongoDB shardé..."
 
-# --- Helper function ---
+# Fonction pour attendre que MongoDB soit prêt
 wait_for_mongo() {
   local host=$1
-  local service_name=$(echo $host | cut -d: -f1) # Extract service name for better logging
+  local service_name=$(echo $host | cut -d: -f1) # Extraire les noms de service
   echo "Attente de MongoDB sur $service_name ($host)..."
-  # Use a timeout to prevent infinite loops
-  local max_wait=120 # Maximum wait time in seconds (adjust as needed)
+  # timeout de 120s pour éviter les boucles infinies
+  local max_wait=120 # temps max
   local current_wait=0
   until mongosh --host $host --quiet --eval "db.adminCommand('ping')" >/dev/null 2>&1; do
     if [ $current_wait -ge $max_wait ]; then
@@ -21,7 +21,7 @@ wait_for_mongo() {
   echo "$service_name ($host) est prêt."
 }
 
-# --- Helper function to wait for RS primary ---
+# Fonction pour attendre le primaire du replica set
 wait_for_rs_primary() {
   local host=$1
   local rs_name=$2
@@ -47,14 +47,15 @@ wait_for_rs_primary() {
 }
 
 
-# --- Wait for individual config server nodes ---
+# Attendre les config servers nodes
+echo "Attente de MongoDB sur les config servers..."
 wait_for_mongo config1:27017
 wait_for_mongo config2:27017
 wait_for_mongo config3:27017
 
-# --- Init Config Replica Set ---
+# Initialisation du replica set des config servers
 echo "Configuration du replica set des config servers (configReplSet)..."
-# Use --eval instead of heredoc for potentially better error handling/output capture
+# Verification de l'existence du replica set
 mongosh --host config1:27017 --eval '
   try {
     rs.initiate({
@@ -76,23 +77,23 @@ mongosh --host config1:27017 --eval '
       quit(1); // Exit script with error
     }
   }
-' || exit 1 # Exit bash script if mongosh fails
+' || exit 1 # Exit si mongosh échoue
 
-# --- Wait for Config RS Primary ---
+# Attendre le primaire du replica set des config servers
 wait_for_rs_primary config1:27017 configReplSet
 
 
-# --- Wait for individual shard server nodes ---
+# Attendre les shards nodes
 for shard in 1 2 3; do
-  port=$((27017 + $shard)) # Calculate port (27018, 27019, 27020)
+  port=$((27017 + $shard)) # calcule port (27018, 27019, 27020) (basé sur ce qu'on a mis dans docker-compose.yml)
   wait_for_mongo shard${shard}a:${port}
   wait_for_mongo shard${shard}b:${port}
   wait_for_mongo shard${shard}c:${port}
 done
 
-# --- Init Shard Replica Sets ---
+# Initialisation des replica sets des shards
 for shard in 1 2 3; do
-  port=$((27017 + $shard)) # Calculate port
+  port=$((27017 + $shard)) 
   rs_name="shard${shard}ReplSet"
   primary_host="shard${shard}a:${port}"
 
@@ -120,24 +121,24 @@ for shard in 1 2 3; do
         quit(1); // Exit script with error
       }
     }
-  ' || exit 1 # Exit bash script if mongosh fails
+  ' || exit 1 # Exit si mongosh échoue
 
-  # --- Wait for Shard RS Primary ---
+  # Attendre le primaire du replica set du shard
   wait_for_rs_primary $primary_host $rs_name
 
 done
 
-# --- Wait for mongos (Important: mongos depends on configReplSet being ready) ---
-# At this point, configReplSet should have a primary, so mongos *should* be able to start correctly.
+# Attendre le mongos (mongos dépend de configReplSet pour démarrer)
+# configReplSet devrait avoir un primaire à ce stade et mongos devrait être prêt à démarrer
 wait_for_mongo mongos:27017
 
-# Add a small delay to allow mongos to fully connect internally after becoming pingable
+# on Ajoute un petit délai pour la stabilisation de mongos afin de s'assurer qu'il est prêt
 echo "pause pour stabilisation de mongos..."
 sleep 10
 
-# --- Shard cluster setup ---
+# Shard cluster setup 
 echo "Ajout des shards au cluster via mongos..."
-# Use --eval for potentially better error checking
+
 mongosh --host mongos:27017 --eval '
   print("Tentative ajout des shards...");
 
@@ -230,7 +231,7 @@ mongosh --host mongos:27017 --eval '
   shardCollectionIfNotSharded("transactions", { _id: "hashed" });
 
   print("Configuration du sharding terminée.");
-' || exit 1 # Exit bash script if mongosh fails
+' || exit 1 # Exit bash si mongosh échoue
 
 echo "Cluster MongoDB shardé prêt à emploi."
 exit 0

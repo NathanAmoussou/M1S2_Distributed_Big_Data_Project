@@ -4,7 +4,9 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.mongodb.client.model.Projections;
 import org.bson.Document;
+import org.bson.conversions.Bson;
 import org.bson.types.ObjectId;
 import org.json.JSONObject;
 
@@ -12,8 +14,6 @@ import com.mongodb.client.ClientSession;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
-import com.mongodb.client.model.IndexOptions;
-import com.mongodb.client.model.Indexes;
 
 import Models.Investor;
 import Models.Wallet;
@@ -28,22 +28,23 @@ public class InvestorDAO implements GenericDAO<Investor> {
         // this.createUniqueIndexes(); // index sur username and email to avoid duplicates investors
     }
 
-    private void createUniqueIndexes() {
-        try {
-            // Creating an index on "username" to be unique
-            collection.createIndex(Indexes.ascending("username"), new IndexOptions().unique(true));
+    // ON NE LE FAIT PLUS ICI LES INDEXES SONT CREES DANS DatabaseSetupManager
+    // private void createUniqueIndexes() {
+    //     try {
+    //         // Creating an index on "username" to be unique
+    //         collection.createIndex(Indexes.ascending("username"), new IndexOptions().unique(true));
 
-            // Creating an index on "email" to be unique
-            collection.createIndex(Indexes.ascending("email"), new IndexOptions().unique(true));
+    //         // Creating an index on "email" to be unique
+    //         collection.createIndex(Indexes.ascending("email"), new IndexOptions().unique(true));
 
-            // Creating a unique index on each wallet's walletId
-            collection.createIndex(Indexes.ascending("wallets.walletId"), new IndexOptions().unique(true));
+    //         // Creating a unique index on each wallet's walletId
+    //         collection.createIndex(Indexes.ascending("wallets.walletId"), new IndexOptions().unique(true));
 
-            System.out.println("Unique indexes on 'username', 'email', and 'wallets.walletId' created successfully.");
-        } catch (Exception e) {
-            System.err.println("Error creating indexes: " + e.getMessage());
-        }
-    }
+    //         System.out.println("Unique indexes on 'username', 'email', and 'wallets.walletId' created successfully.");
+    //     } catch (Exception e) {
+    //         System.err.println("Error creating indexes: " + e.getMessage());
+    //     }
+    // }
 
 
     @Override
@@ -198,19 +199,77 @@ public class InvestorDAO implements GenericDAO<Investor> {
 
     // updateWallet method with session
     public Wallet updateWallet(ClientSession session, Wallet wallet) { // Added session
-        try {
-            Document filter = new Document("wallets.walletId", wallet.getWalletId());
-            Document updateDoc = new Document("$set", new Document("wallets.$", new Document(wallet.toJson().toMap())));
-            // Pass session to updateOne()
-            collection.updateOne(session, filter, updateDoc);
-            return wallet;
-        } catch (Exception e) {
-            System.out.println("Error updating Wallet: " + e.getMessage());
-            throw new RuntimeException("Error updating wallet: " + e.getMessage());
-        }
-    }
 
-    // Overloaded to call without session
+            if (session == null) {
+                throw new IllegalArgumentException("ClientSession cannot be null for transactional updateWallet");
+            }
+            ObjectId walletId = wallet.getWalletId();
+            if (walletId == null || wallet == null) {
+                throw new IllegalArgumentException("Wallet ID and updated Wallet data cannot be null");
+            }
+            // Vérifier que l'ID du portefeuille dans l'objet correspond à celui recherché
+            if (!walletId.equals(wallet.getWalletId())) {
+                throw new IllegalArgumentException("Wallet ID mismatch between parameter (" + walletId + ") and Wallet object (" + wallet.getWalletId() + ")");
+            }
+
+            try {
+                // 1. Lire (Find) DANS LA SESSION pour obtenir le username (clé de shard)
+                //    On filtre par l'ID du portefeuille qui est supposé être unique (via index).
+                //    On projette UNIQUEMENT les champs nécessaires : _id et username.
+                Document findFilter = new Document("wallets.walletId", walletId);
+                Bson projection = Projections.fields(Projections.include("_id", "username")); // <- Récupérer username !
+
+                Document investorDoc = collection.find(session, findFilter).projection(projection).first();
+
+                if (investorDoc == null) {
+                    throw new RuntimeException("Error updating wallet: No investor found containing wallet ID '" + walletId + "'.");
+                }
+
+                ObjectId investorId = investorDoc.getObjectId("_id");
+                String username = investorDoc.getString("username"); // <- Le username nécessaire pour le filtre de l'update
+
+                if (username == null || username.isEmpty()) {
+                    // Sécurité : devrait pas arriver si le modèle est correct, mais vérifions.
+                    throw new RuntimeException("Error updating wallet: Investor document (ID: " + investorId + ") is missing the username (shard key).");
+                }
+
+                // 2. Écrire (Update) DANS LA SESSION en utilisant la clé de shard (username)
+                //    Le filtre cible maintenant le bon shard ET le bon portefeuille dans le tableau.
+                Document updateFilter = new Document("username", username) // <-- Clé de shard !
+                        .append("wallets.walletId", walletId); // <-- Cibler le bon wallet
+
+                // Création du document de mise à jour pour le portefeuille spécifique
+                Document walletDocForUpdate = new Document(wallet.toJson().toMap());
+                Document updateOperation = new Document("$set", new Document("wallets.$", walletDocForUpdate));
+
+                com.mongodb.client.result.UpdateResult result = collection.updateOne(session, updateFilter, updateOperation);
+
+                // Vérification du résultat de l'update
+                if (result.getMatchedCount() == 0) {
+                    // Très improbable si le find a réussi, mais possible en cas de race condition extrême HORS transaction
+                    // ou si le username récupéré était incorrect (corruption de données?).
+                    throw new RuntimeException("Error updating wallet: Update filter failed to match (Username: '" + username + "', WalletID: '" + walletId + "'). Data inconsistency possible.");
+                }
+                if (result.getModifiedCount() == 0) {
+                    System.out.println("Wallet " + walletId + " for investor with username " + username + " found but not modified (data might be identical).");
+                } else {
+                    System.out.println("Wallet " + walletId + " updated successfully for investor with username " + username + ".");
+                }
+
+                return wallet; // Retourne l'objet avec les nouvelles données
+
+            } catch (Exception e) {
+                System.err.println("Error during transactional updateWallet (WalletID: " + walletId + "): " + e.getMessage());
+                if (e instanceof RuntimeException) {
+                    throw (RuntimeException) e;
+                } else {
+                    throw new RuntimeException("Error during transactional updateWallet: " + e.getMessage(), e);
+                }
+            }
+        }
+
+
+        // Overloaded to call without session
     public Wallet updateWallet(Wallet wallet) {
         return updateWallet(null, wallet);
     }

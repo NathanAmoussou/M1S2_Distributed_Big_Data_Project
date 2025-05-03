@@ -24,6 +24,7 @@ import Services.crudStockService;
 import Utils.DatabaseSeeder;
 import Utils.DatabaseSetupManager;
 import Utils.InteractionSimulator;
+import Utils.StockSeeder;
 
 public class Application {
     private static ScheduledExecutorService scheduler;
@@ -44,8 +45,8 @@ public class Application {
         System.out.println("Mise en cache Redis : " + Config.AppConfig.isEnabled());
 
         MongoClient mongoClient = null;
-        MongoDatabase database = null;
         RestApiServer apiServer = null;
+        MongoDatabase database;
 
         // Read MongoDB config from environment variables
         String mongoUriEnv = System.getenv("MONGO_URI");
@@ -63,9 +64,9 @@ public class Application {
             database.runCommand(new org.bson.Document("ping", 1));
             System.out.println("Successfully connected to MongoDB.");
 
-            boolean runSeeding = false;
-            boolean runSimulation = false;
-            
+            boolean runInvestorsSeeding = true;
+            boolean runStocksSeedingAndSimulation = true;
+
             // RUN DATABASE SETUP (indexing and validators setup)
             try {
                 System.out.println("\n--- Starting Database Setup ---");
@@ -79,10 +80,10 @@ public class Application {
             }
 
             // RUN DATABASE SEEDING
-            if (runSeeding) {
+            if (runInvestorsSeeding) {
                 try {
                     System.out.println("\n--- Starting Database Seeding ---");
-                    DatabaseSeeder.seedInvestors(database); 
+                    DatabaseSeeder.seedInvestors(database);
                     System.out.println("--- Database Seeding Finished ---");
                 } catch (Exception e) {
                     System.err.println("WARNING: Database seeding encountered errors. Continuing...");
@@ -100,10 +101,6 @@ public class Application {
             // Initialize InvestorService etc. if needed by other parts
             System.out.println("DAOs and Services Initialized.");
 
-            // *** === (Optional) Run Tests === ***
-            // System.out.println("\n---------- Testing Operations ----------");
-            // testStockCrud(stockService); // Pass initialized service
-            // testHistoricalDataFetch(database);
 
             // START REST API SERVER (IN A BACKGROUND THREAD)
             System.out.println("\nStarting REST API Server...");
@@ -124,7 +121,18 @@ public class Application {
             }
 
             // RUN INTERACTION SIMULATION (USING THE RESTAPI - IN A BACKGROUND THREAD)
-            if (runSimulation) {
+            if (runStocksSeedingAndSimulation) {
+
+                try {
+                    System.out.println("\n--- Starting Stock Database Seeding ---");
+                    StockSeeder.seedStocksAndHistory(database);
+                    System.out.println("--- Stock Database Seeding Finished ---");
+                } catch (Exception e) {
+                    System.err.println("WARNING: Stock database seeding encountered errors. Continuing...");
+                    e.printStackTrace();
+                }
+
+
                 System.out.println("\n--- Starting Interaction Simulation (Background) ---");
                 MongoDatabase finalDatabase = database;
                 Thread simulationThread = new Thread(() -> {
@@ -194,110 +202,6 @@ public class Application {
 
     }
 
-    /**
-     * Test method to verify if the crudStockService works correctly
-     */
-    private static void testStockCrud(String mongoConnectionString, String dbName) {
-        crudStockService stockService = null;
-        try {
-            MongoDatabase database = MongoClients.create(mongoConnectionString).getDatabase(dbName);
-            // Initialize the CRUD service
-            stockService = new crudStockService(database);
-            
-            // Test stock creation for different stocks
-            System.out.println("Testing stock creation...");
-            
-            // Create a US stock (Apple)
-            Stock appleStock = stockService.createStock("AAPL", "");
-            if (appleStock != null) {
-                System.out.println("Successfully created Apple stock: " + appleStock);
-            } else {
-                System.out.println("Failed to create Apple stock or it already exists");
-            }
-            
-            // Create a European stock (LVMH on Paris exchange)
-            Stock lvmhStock = stockService.createStock("MC", "PA");
-            if (lvmhStock != null) {
-                System.out.println("Successfully created LVMH stock: " + lvmhStock);
-            } else {
-                System.out.println("Failed to create LVMH stock or it already exists");
-            }
-            
-            // Read back the created stocks to verify
-            System.out.println("\nTesting stock retrieval...");
-            
-            // Read Apple stock
-            Stock retrievedApple = stockService.readStock("AAPL");
-            if (retrievedApple != null) {
-                System.out.println("Retrieved Apple stock: " + retrievedApple);
-            }
-            
-            // Read LVMH stock
-            Stock retrievedLVMH = stockService.readStock("MC.PA");
-            if (retrievedLVMH != null) {
-                System.out.println("Retrieved LVMH stock: " + retrievedLVMH);
-            }
-            
-            // Test listing all stocks
-            System.out.println("\nListing all stocks in database:");
-            stockService.getAllStocks().forEach(stock -> {
-                System.out.println(" - " + stock);
-            });
-            
-            System.out.println("\nStock CRUD operations test completed.");
-        } catch (Exception e) {
-            System.err.println("Error during stock CRUD test: " + e.getMessage());
-            e.printStackTrace();
-
-        }
-    }
-
-
-    /**
-     * Test fetching and storing historical data for a specific stock
-     */
-    private static void testHistoricalDataFetch(MongoDatabase db) {
-        crudStockService stockService = null;
-        try {
-            MongoDatabase database = db;
-            // Initialize the CRUD service
-            stockService = new crudStockService(database);
-
-            System.out.println("\n---------- Testing Historical Data Fetch ----------");
-
-            // Create a stock with historical data (e.g., Microsoft)
-            Stock msftStock = stockService.createStock("MSFT", "");
-            if (msftStock != null) {
-                System.out.println("Successfully created Microsoft stock with historical data: " + msftStock);
-
-                StockPriceHistoryDAO historyDao = new StockPriceHistoryDAO(database);
-
-                // Get count of historical records saved
-                List<StockPriceHistory> msftHistory = historyDao.findAllByTicker("MSFT");
-                System.out.println("Saved " + msftHistory.size() + " historical data points for Microsoft");
-
-                // Display a few records as samples
-                if (!msftHistory.isEmpty()) {
-                    System.out.println("\nSample historical records:");
-                    int sampleSize = Math.min(5, msftHistory.size());
-                    for (int i = 0; i < sampleSize; i++) {
-                        System.out.println(msftHistory.get(i));
-                    }
-                }
-
-            } else {
-                System.out.println("Failed to create Microsoft stock or it already exists");
-            }
-
-            System.out.println("\nHistorical data fetch test completed.");
-
-        } catch (Exception e) {
-            System.err.println("Error during historical data fetch test: " + e.getMessage());
-            e.printStackTrace();
-
-        }
-    }
-
     private static void startDailyHistoryCacheRefresh(crudStockService stockService, StockPriceHistoryDAO historyDao) {
         scheduler = Executors.newSingleThreadScheduledExecutor();
 
@@ -357,4 +261,101 @@ public class Application {
 
         scheduler.schedule(refreshTask, 1, TimeUnit.MINUTES); // Ex: Exécuter dans 1 minute
     }
+
+    //    private static void testStockCrud(MongoDatabase db) {
+//        crudStockService stockService = null;
+//        try {
+//            MongoDatabase database = db;
+//            // Initialize the CRUD service
+//            stockService = new crudStockService(database);
+//
+//            // Test stock creation for different stocks
+//            System.out.println("Testing stock creation...");
+//
+//            // Create a US stock (Apple)
+//            Stock appleStock = stockService.createStock("AAPL", "");
+//            if (appleStock != null) {
+//                System.out.println("Successfully created Apple stock: " + appleStock);
+//            } else {
+//                System.out.println("Failed to create Apple stock or it already exists");
+//            }
+//
+//            // Create a European stock (LVMH on Paris exchange)
+//            Stock lvmhStock = stockService.createStock("MC", "PA");
+//            if (lvmhStock != null) {
+//                System.out.println("Successfully created LVMH stock: " + lvmhStock);
+//            } else {
+//                System.out.println("Failed to create LVMH stock or it already exists");
+//            }
+//
+//            // Read back the created stocks to verify
+//            System.out.println("\nTesting stock retrieval...");
+//
+//            // Read Apple stock
+//            Stock retrievedApple = stockService.readStock("AAPL");
+//            if (retrievedApple != null) {
+//                System.out.println("Retrieved Apple stock: " + retrievedApple);
+//            }
+//
+//            // Read LVMH stock
+//            Stock retrievedLVMH = stockService.readStock("MC.PA");
+//            if (retrievedLVMH != null) {
+//                System.out.println("Retrieved LVMH stock: " + retrievedLVMH);
+//            }
+//
+//            // Test listing all stocks
+//            System.out.println("\nListing all stocks in database:");
+//            stockService.getAllStocks().forEach(stock -> {
+//                System.out.println(" - " + stock);
+//            });
+//
+//            System.out.println("\nStock CRUD operations test completed.");
+//        } catch (Exception e) {
+//            System.err.println("Error during stock CRUD test: " + e.getMessage());
+//            e.printStackTrace();
+//
+//        }
+//    }
+//
+//    private static void testHistoricalDataFetch(MongoDatabase db) {
+//        crudStockService stockService = null;
+//        try {
+//            MongoDatabase database = db;
+//            // Initialize the CRUD service
+//            stockService = new crudStockService(database);
+//
+//            System.out.println("\n---------- Testing Historical Data Fetch ----------");
+//
+//            // Create a stock with historical data (e.g., Microsoft)
+//            Stock msftStock = stockService.createStock("MSFT", "");
+//            if (msftStock != null) {
+//                System.out.println("Successfully created Microsoft stock with historical data: " + msftStock);
+//
+//                StockPriceHistoryDAO historyDao = new StockPriceHistoryDAO(database);
+//
+//                // Get count of historical records saved
+//                List<StockPriceHistory> msftHistory = historyDao.findAllByTicker("MSFT");
+//                System.out.println("Saved " + msftHistory.size() + " historical data points for Microsoft");
+//
+//                // Display a few records as samples
+//                if (!msftHistory.isEmpty()) {
+//                    System.out.println("\nSample historical records:");
+//                    int sampleSize = Math.min(5, msftHistory.size());
+//                    for (int i = 0; i < sampleSize; i++) {
+//                        System.out.println(msftHistory.get(i));
+//                    }
+//                }
+//
+//            } else {
+//                System.out.println("Failed to create Microsoft stock or it already exists");
+//            }
+//
+//            System.out.println("\nHistorical data fetch test completed.");
+//
+//        } catch (Exception e) {
+//            System.err.println("Error during historical data fetch test: " + e.getMessage());
+//            e.printStackTrace();
+//
+//        }
+//    }
 }

@@ -4,6 +4,7 @@ DAO\StockPriceHistoryDAO.class
 CacheDAO\StockHistoryCacheDAO.class
 Models\Wallet.class
 Services\StockPythonYahooApiService.class
+Utils\StockSeeder.class
 Models\Holding.class
 Models\StockPriceHistory.class
 Utils\MongoDBConnection.class
@@ -20,6 +21,7 @@ Routes\RestApiServer.class
 Routes\RoutesUtils.class
 DAO\TransactionDAO.class
 Models\Address.class
+Utils\StockSeeder$TickerParts.class
 DAO\StockDAO.class
 Models\Stock.class
 CacheDAO\WalletCalculationCacheDAO.class

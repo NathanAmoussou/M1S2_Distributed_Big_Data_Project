@@ -158,10 +158,8 @@ services:
       MONGO_URI: "mongodb://mongos:27017"
       MONGO_DB_NAME: "gestionBourse"
       PYTHON_API_URL: "http://python-api:5000"
-      ENABLE_REDIS_CACHE: "true"
+      ENABLE_REDIS_CACHE: "false"
     restart: on-failure
-    # profiles:
-    #   - manual
     command: >
       bash -c '
       if [ "$ENABLE_REDIS_CACHE" = "true" ]; then
