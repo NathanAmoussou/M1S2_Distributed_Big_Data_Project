@@ -5,27 +5,26 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Collections;
-import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
+
+import org.bson.Document;
+import org.bson.types.ObjectId;
 
 import com.mongodb.ReadConcern;
 import com.mongodb.ReadPreference;
 import com.mongodb.TransactionOptions;
 import com.mongodb.WriteConcern;
 import com.mongodb.client.ClientSession;
-import com.mongodb.client.MongoClient;import java.util.Optional;
-import java.util.stream.Collectors;
-
-import CacheDAO.*;import java.util.Optional;
-import java.util.stream.Collectors;
-
-import CacheDAO.*;
-import org.bson.Document;
-import org.bson.types.ObjectId;
-
+import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoDatabase;
 
+import CacheDAO.HoldingCacheDAO;
+import CacheDAO.InvestorCacheDAO;
+import CacheDAO.ReportCacheDAO;
+import CacheDAO.TransactionCacheDAO;
+import CacheDAO.WalletCalculationCacheDAO;
 import Config.AppConfig;
 import DAO.HoldingsDAO;
 import DAO.InvestorDAO;
@@ -307,110 +306,45 @@ public class TransactionService {
      * Retrieves transactions for a specific wallet optionally filtered by date.
      */
     public List<Transaction> getTransactionsForWallet(String walletIdStr, LocalDate startDate, LocalDate endDate) {
-        if (!ObjectId.isValid(walletIdStr)) {
-            throw new IllegalArgumentException("Invalid wallet ID format: " + walletIdStr);
-        }
-        ObjectId walletId = new ObjectId(walletIdStr);
-
-        List<Transaction> allTransactions;
-
-        if (AppConfig.isEnabled()) {
-            Optional<List<Transaction>> cachedTransactions = transactionCacheDAO.findByWalletId(walletId);
-            if (cachedTransactions.isPresent()) {
-                allTransactions = cachedTransactions.get(); // Cache HIT
-            } else {
-                allTransactions = transactionDAO.getTransactionsByWalletId(walletId);
-
-                // Sauvegarder la liste complète dans le cache
-                if (allTransactions != null && AppConfig.isEnabled()) { // Vérifier null avant sauvegarde
-                    transactionCacheDAO.saveByWalletId(walletId, allTransactions);
-                }
+        
+        try {
+            if (!ObjectId.isValid(walletIdStr)) {
+                throw new IllegalArgumentException("Invalid wallet ID format: " + walletIdStr);
             }
-        } else {
+            ObjectId walletId = new ObjectId(walletIdStr);
 
-            allTransactions = transactionDAO.getTransactionsByWalletId(walletId);
-        }
+            List<Transaction> allTransactions;
 
-        if (allTransactions == null) {
-            return Collections.emptyList();
-        }
+            if (AppConfig.isEnabled()) {
+                Optional<List<Transaction>> cachedTransactions = transactionCacheDAO.findByWalletId(walletId);
+                if (cachedTransactions.isPresent()) {
+                    allTransactions = cachedTransactions.get(); // Cache HIT
+                } else {
+                    LocalDateTime startDateTime = (startDate != null) ? startDate.atStartOfDay() : null;
+                    LocalDateTime endDateTime = (endDate != null) ? endDate.atTime(LocalTime.MAX) : null;
 
-        if (startDate == null && endDate == null) {
-            return allTransactions;
-        } else {
-            LocalDateTime startDateTime = (startDate != null) ? startDate.atStartOfDay() : null;
-            LocalDateTime endDateTime = (endDate != null) ? endDate.atTime(LocalTime.MAX) : null;
+                    allTransactions = transactionDAO.findByWalletIdAndDateRange(walletId, startDateTime, endDateTime);
 
-            return allTransactions.stream()
-                    .filter(tx -> {
-                        LocalDateTime createdAt = tx.getCreatedAt();
-                        boolean afterStart = (startDateTime == null) || !createdAt.isBefore(startDateTime);
-                        boolean beforeEnd = (endDateTime == null) || !createdAt.isAfter(endDateTime);
-                        return afterStart && beforeEnd;
-                    })
-                    .sorted((t1, t2) -> t2.getCreatedAt().compareTo(t1.getCreatedAt()))
-                    .collect(Collectors.toList());
-        }
-    }
-    /*
-    public List<Transaction> getTransactionsForWallet(String walletIdStr, LocalDate startDate, LocalDate endDate) {
-        if (!ObjectId.isValid(walletIdStr)) {
-            throw new IllegalArgumentException("Invalid wallet ID format: " + walletIdStr);
-        }
-        ObjectId walletId = new ObjectId(walletIdStr);
-
-        List<Transaction> allTransactions;
-
-        if (AppConfig.isEnabled()) {
-            Optional<List<Transaction>> cachedTransactions = transactionCacheDAO.findByWalletId(walletId);
-            if (cachedTransactions.isPresent()) {
-                allTransactions = cachedTransactions.get(); // Cache HIT
-            } else {
-                allTransactions = transactionDAO.getTransactionsByWalletId(walletId);
-
-                // Sauvegarder la liste complète dans le cache
-                if (allTransactions != null && AppConfig.isEnabled()) { // Vérifier null avant sauvegarde
-                    transactionCacheDAO.saveByWalletId(walletId, allTransactions);
+                    // Sauvegarder la liste complète dans le cache
+                    if (allTransactions != null && AppConfig.isEnabled()) { // Vérifier null avant sauvegarde
+                        transactionCacheDAO.saveByWalletId(walletId, allTransactions);
+                    }
                 }
+            } else {
+                LocalDateTime startDateTime = (startDate != null) ? startDate.atStartOfDay() : null;
+                LocalDateTime endDateTime = (endDate != null) ? endDate.atTime(LocalTime.MAX) : null;
+
+                allTransactions = transactionDAO.findByWalletIdAndDateRange(walletId, startDateTime, endDateTime);
             }
-        } else {
 
-            allTransactions = transactionDAO.getTransactionsByWalletId(walletId);
-        }
-
-        if (allTransactions == null) {
-            return Collections.emptyList();
-        }
-
-        if (startDate == null && endDate == null) {
+            System.out.println("Transactions retrieved for wallet: " + walletIdStr + ", count: " + (allTransactions != null ? allTransactions.size() : 0) + " for date range: " + startDate + " to " + endDate);
             return allTransactions;
-        } else {
-            LocalDateTime startDateTime = (startDate != null) ? startDate.atStartOfDay() : null;
-            LocalDateTime endDateTime = (endDate != null) ? endDate.atTime(LocalTime.MAX) : null;
-
-            return allTransactions.stream()
-                    .filter(tx -> {
-                        LocalDateTime createdAt = tx.getCreatedAt();
-                        boolean afterStart = (startDateTime == null) || !createdAt.isBefore(startDateTime);
-                        boolean beforeEnd = (endDateTime == null) || !createdAt.isAfter(endDateTime);
-                        return afterStart && beforeEnd;
-                    })
-                    .sorted((t1, t2) -> t2.getCreatedAt().compareTo(t1.getCreatedAt()))
-                    .collect(Collectors.toList());
-        }
+       } catch (Exception e) {
+            throw new RuntimeException("Error retrieving transactions: " + e.getMessage());
+       }
     }
-    /*
-    public List<Transaction> getTransactionsForWallet(String walletIdStr, LocalDate startDate, LocalDate endDate) {
-        if (!ObjectId.isValid(walletIdStr)) {
-            throw new IllegalArgumentException("Invalid wallet ID format: " + walletIdStr);
-        }
-        ObjectId walletId = new ObjectId(walletIdStr);
+    
 
-        LocalDateTime startDateTime = (startDate != null) ? startDate.atStartOfDay() : null;
-        LocalDateTime endDateTime = (endDate != null) ? endDate.atTime(LocalTime.MAX) : null;
-
-        return transactionDAO.findByWalletIdAndDateRange(walletId, startDateTime, endDateTime);
-    }*/
     public List<Document> getMostTradedStocks(LocalDateTime start, LocalDateTime end, int limit) {
         if (limit <= 0) limit = 10;
 

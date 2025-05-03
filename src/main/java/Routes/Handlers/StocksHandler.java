@@ -50,7 +50,7 @@ public class StocksHandler implements HttpHandler {
     public void handle(HttpExchange exchange) throws IOException {
         String path = exchange.getRequestURI().getPath();
         String method = exchange.getRequestMethod();
-        System.out.println("StockHandler received: " + method + " " + path); // Debug logging
+        System.out.println("StockHandler received: " + method + " " + path);
 
 
         try {

@@ -155,6 +155,7 @@ public class TransactionDAO implements GenericDAO<Transaction> {
     }
 
     public List<Transaction> findByWalletIdAndDateRange(ObjectId walletId, LocalDateTime startDateTime, LocalDateTime endDateTime) {
+//        System.out.println("DEBUG - Finding transactions by walletId and date range: " + walletId + ", " + startDateTime + ", " + endDateTime);
         List<Transaction> results = new ArrayList<>();
         try {
             List<Bson> filters = new ArrayList<>();
@@ -173,6 +174,8 @@ public class TransactionDAO implements GenericDAO<Transaction> {
                         Transaction t = documentToTransaction(doc);
                         if (t != null) results.add(t);
                     });
+
+//            System.out.println("DEBUG - Found " + results + " transactions for walletId: " + walletId + " in date range: " + startDateTime + " to " + endDateTime);
             return results;
         } catch (Exception e) {
             System.err.println("Error finding transactions by investorId and date range: " + e.getMessage());

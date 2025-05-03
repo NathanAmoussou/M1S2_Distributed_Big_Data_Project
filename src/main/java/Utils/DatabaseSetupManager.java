@@ -186,7 +186,7 @@ public class DatabaseSetupManager {
             // or other issues occur.
             System.err.println("  ! Error during index creation/check for " + indexDescription +
                     " on collection " + collectionName + ": " + e.getMessage());
-            // e.printStackTrace(); // Uncomment for full debug trace
+            // e.printStackTrace();
         }
     }
 
@@ -369,8 +369,8 @@ public class DatabaseSetupManager {
             // If collectionExists and hasValidator, we do nothing (already logged existence).
 
         } catch (Exception e) {
-            System.err.println("  ! Error setting up validator for collection '" + collectionName + "': " + e.getMessage());
-            // e.printStackTrace(); // Uncomment for debug
+            System.err.println("   Error setting up validator for collection '" + collectionName + "': " + e.getMessage());
+            // e.printStackTrace();
         }
     }
 }

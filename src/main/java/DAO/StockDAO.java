@@ -59,7 +59,7 @@ public class StockDAO implements GenericDAO<Stock> {
             System.err.println("Warning: Unexpected type for lastPrice in stock " + doc.getString("stockTicker") + ": " + lastPriceObj.getClass().getName());
             lastPriceStr = "0.0";
         }
-        // System.out.println("lastPrice: " + lastPriceStr); // Keep for debugging
+        // System.out.println("lastPrice: " + lastPriceStr);
 
         // potential null Date
         java.util.Date lastUpdatedDate = doc.getDate("lastUpdated");

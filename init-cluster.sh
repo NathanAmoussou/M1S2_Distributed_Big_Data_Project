@@ -151,7 +151,7 @@ mongosh --host mongos:27017 --eval '
     return false;
   }
 
-  // Add Shard 1
+  // Ajoute Shard 1
   if (!isShardAdded("shard1ReplSet")) {
     print("Ajout de shard1ReplSet...");
     var result1 = sh.addShard("shard1ReplSet/shard1a:27018,shard1b:27018,shard1c:27018");
@@ -161,7 +161,7 @@ mongosh --host mongos:27017 --eval '
     print("INFO: shard1ReplSet déjà ajouté.");
   }
 
-  // Add Shard 2
+  // Ajoute Shard 2
   if (!isShardAdded("shard2ReplSet")) {
     print("Ajout de shard2ReplSet...");
     var result2 = sh.addShard("shard2ReplSet/shard2a:27019,shard2b:27019,shard2c:27019");
@@ -171,7 +171,7 @@ mongosh --host mongos:27017 --eval '
     print("INFO: shard2ReplSet déjà ajouté.");
   }
 
-  // Add Shard 3
+  // Ajoute Shard 3
   if (!isShardAdded("shard3ReplSet")) {
     print("Ajout de shard3ReplSet...");
     var result3 = sh.addShard("shard3ReplSet/shard3a:27020,shard3b:27020,shard3c:27020");
@@ -184,7 +184,7 @@ mongosh --host mongos:27017 --eval '
   print("Vérification de état du sharding...");
   printjson(sh.status());
 
-  // Enable Sharding on DB (idempotent check)
+  // Activation du sharding pour la base de données
   var dbName = "gestionBourse";
   var databases = db.getSiblingDB("config").databases.find({_id: dbName}).toArray();
   if (databases.length > 0 && databases[0].partitioned) {
@@ -196,10 +196,10 @@ mongosh --host mongos:27017 --eval '
       if (!enableResult.ok && enableResult.codeName !== "DatabaseAlreadyEnabled") { print("ERREUR lors de activation du sharding pour " + dbName); quit(1); }
   }
 
-  // Switch to the target database
+  // Switch vers la bd
   db = db.getSiblingDB(dbName);
 
-  // Create collections if they dont exist (createCollection is idempotent)
+  // On crée les collections si elles n existent pas
   print("Création/Vérification des collections...");
   db.createCollection("investors");
   db.createCollection("holdings");
@@ -208,7 +208,7 @@ mongosh --host mongos:27017 --eval '
   db.createCollection("transactions");
   print("Collections créées/vérifiées.");
 
-  // Shard collections (check if already sharded)
+  // On shard les collections 
   function shardCollectionIfNotSharded(collName, key) {
     var ns = dbName + "." + collName;
     var configDB = db.getSiblingDB("config");

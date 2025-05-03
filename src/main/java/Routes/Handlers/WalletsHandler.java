@@ -1,18 +1,5 @@
 package Routes.Handlers;
 
-import Routes.RoutesUtils;
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
-import Models.Holding;
-import Models.Transaction;
-import Models.Wallet;
-import org.bson.types.ObjectId;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import Services.HoldingService;
-import Services.InvestorService;
-import Services.TransactionService;
-
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -21,6 +8,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.bson.types.ObjectId;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+
+import Models.Holding;
+import Models.Transaction;
+import Models.Wallet;
+import Routes.RoutesUtils;
+import Services.HoldingService;
+import Services.InvestorService;
+import Services.TransactionService;
 
 public class WalletsHandler implements HttpHandler {
 
@@ -52,7 +54,7 @@ public class WalletsHandler implements HttpHandler {
     public void handle(HttpExchange exchange) throws IOException {
         String path = exchange.getRequestURI().getPath();
         String method = exchange.getRequestMethod();
-        System.out.println("WalletHandler received: " + method + " " + path); // Debug logging
+        System.out.println("WalletHandler received: " + method + " " + path);
 
         try {
             Matcher matcher;
@@ -226,11 +228,13 @@ public class WalletsHandler implements HttpHandler {
             String startDateStr = params.getOrDefault("startDate", null);
             String endDateStr = params.getOrDefault("endDate", null);
 
+//            System.out.println("DEBUG received GetTransactions: " + walletIdStr + ", startDate: " + startDateStr + ", endDate: " + endDateStr);
             LocalDate startDate = null;
             LocalDate endDate = null;
             try {
                 if (startDateStr != null) startDate = LocalDate.parse(startDateStr);
                 if (endDateStr != null) endDate = LocalDate.parse(endDateStr);
+//                System.out.println("DEBUG parsed dates: startDate: " + startDate + ", endDate: " + endDate);
             } catch (DateTimeParseException e) {
                 RoutesUtils.sendErrorResponse(exchange, 400, "Invalid date format. Use YYYY-MM-DD.");
                 return;
