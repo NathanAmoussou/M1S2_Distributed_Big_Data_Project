@@ -7,16 +7,16 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import com.mongodb.client.model.Filters;
-import com.mongodb.client.model.Sorts;
 import org.bson.Document;
+import org.bson.conversions.Bson;
+import org.bson.types.Decimal128;
 
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.Sorts;
 
 import Models.StockPriceHistory;
-import org.bson.conversions.Bson;
-import org.bson.types.Decimal128;
 
 public class StockPriceHistoryDAO implements GenericDAO<StockPriceHistory> {
     private final MongoCollection<Document> collection;
@@ -24,7 +24,7 @@ public class StockPriceHistoryDAO implements GenericDAO<StockPriceHistory> {
 
     public StockPriceHistoryDAO(MongoDatabase database) {
         this.collection = database.getCollection("stockPriceHistory");
-        this.collection.createIndex(new Document("stockPriceHistoryTicker", 1)); // we ensure the tickers are indexed
+        // this.collection.createIndex(new Document("stockPriceHistoryTicker", 1)); // we ensure the tickers are indexed
     }
 
     @Override

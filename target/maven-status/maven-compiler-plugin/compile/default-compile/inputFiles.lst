@@ -2,9 +2,11 @@ C:\Users\trist\OneDrive\Documents\UCA-M1\S2\Big Data for Ai\projet\M1S2_Distribu
 C:\Users\trist\OneDrive\Documents\UCA-M1\S2\Big Data for Ai\projet\M1S2_Distributed_Big_Data_Project\src\main\java\CacheDAO\GenericCacheDAO.java
 C:\Users\trist\OneDrive\Documents\UCA-M1\S2\Big Data for Ai\projet\M1S2_Distributed_Big_Data_Project\src\main\java\CacheDAO\HoldingCacheDAO.java
 C:\Users\trist\OneDrive\Documents\UCA-M1\S2\Big Data for Ai\projet\M1S2_Distributed_Big_Data_Project\src\main\java\CacheDAO\InvestorCacheDAO.java
+C:\Users\trist\OneDrive\Documents\UCA-M1\S2\Big Data for Ai\projet\M1S2_Distributed_Big_Data_Project\src\main\java\CacheDAO\ReportCacheDAO.java
 C:\Users\trist\OneDrive\Documents\UCA-M1\S2\Big Data for Ai\projet\M1S2_Distributed_Big_Data_Project\src\main\java\CacheDAO\StockCacheDAO.java
 C:\Users\trist\OneDrive\Documents\UCA-M1\S2\Big Data for Ai\projet\M1S2_Distributed_Big_Data_Project\src\main\java\CacheDAO\StockHistoryCacheDAO.java
 C:\Users\trist\OneDrive\Documents\UCA-M1\S2\Big Data for Ai\projet\M1S2_Distributed_Big_Data_Project\src\main\java\CacheDAO\TransactionCacheDAO.java
+C:\Users\trist\OneDrive\Documents\UCA-M1\S2\Big Data for Ai\projet\M1S2_Distributed_Big_Data_Project\src\main\java\CacheDAO\WalletCalculationCacheDAO.java
 C:\Users\trist\OneDrive\Documents\UCA-M1\S2\Big Data for Ai\projet\M1S2_Distributed_Big_Data_Project\src\main\java\Config\AppConfig.java
 C:\Users\trist\OneDrive\Documents\UCA-M1\S2\Big Data for Ai\projet\M1S2_Distributed_Big_Data_Project\src\main\java\DAO\GenericDAO.java
 C:\Users\trist\OneDrive\Documents\UCA-M1\S2\Big Data for Ai\projet\M1S2_Distributed_Big_Data_Project\src\main\java\DAO\HoldingsDAO.java
@@ -37,6 +39,7 @@ C:\Users\trist\OneDrive\Documents\UCA-M1\S2\Big Data for Ai\projet\M1S2_Distribu
 C:\Users\trist\OneDrive\Documents\UCA-M1\S2\Big Data for Ai\projet\M1S2_Distributed_Big_Data_Project\src\main\java\Services\StockPythonYahooApiService.java
 C:\Users\trist\OneDrive\Documents\UCA-M1\S2\Big Data for Ai\projet\M1S2_Distributed_Big_Data_Project\src\main\java\Services\TransactionService.java
 C:\Users\trist\OneDrive\Documents\UCA-M1\S2\Big Data for Ai\projet\M1S2_Distributed_Big_Data_Project\src\main\java\Utils\DatabaseSeeder.java
+C:\Users\trist\OneDrive\Documents\UCA-M1\S2\Big Data for Ai\projet\M1S2_Distributed_Big_Data_Project\src\main\java\Utils\DatabaseSetupManager.java
 C:\Users\trist\OneDrive\Documents\UCA-M1\S2\Big Data for Ai\projet\M1S2_Distributed_Big_Data_Project\src\main\java\Utils\InteractionSimulator.java
 C:\Users\trist\OneDrive\Documents\UCA-M1\S2\Big Data for Ai\projet\M1S2_Distributed_Big_Data_Project\src\main\java\Utils\JsonUtils.java
 C:\Users\trist\OneDrive\Documents\UCA-M1\S2\Big Data for Ai\projet\M1S2_Distributed_Big_Data_Project\src\main\java\Utils\MongoDBConnection.java

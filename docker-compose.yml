@@ -140,33 +140,35 @@ services:
     restart: unless-stopped
     
   # --- Java Application Service ---
-  # java-app:
-  #   build: .
-  #   container_name: java-app
-  #   depends_on:
-  #     mongo-setup:
-  #       condition: service_completed_successfully
-  #     mongos:
-  #       condition: service_started
-  #     python-api:
-  #       condition: service_started
-  #   ports:
-  #     - "8000:8000"
-  #   networks:
-  #     - app-network
-  #   environment:
-  #     MONGO_URI: "mongodb://mongos:27017"
-  #     MONGO_DB_NAME: "gestionBourse"
-  #     PYTHON_API_URL: "http://python-api:5000"
-  #     ENABLE_REDIS_CACHE: "true"
-  #   restart: on-failure
-  #   command: >
-  #     bash -c '
-  #     if [ "$ENABLE_REDIS_CACHE" = "true" ]; then
-  #       echo "INFO: Redis cache ENABLED via environment variable."
-  #       exec java -jar ./app.jar --enableRedisCache
-  #     else
-  #       echo "INFO: Redis cache DISABLED via environment variable."
-  #       exec java -jar ./app.jar
-  #     fi
-  #     '
+  java-app:
+    build: .
+    container_name: java-app
+    depends_on:
+      mongo-setup:
+        condition: service_completed_successfully
+      mongos:
+        condition: service_started
+      python-api:
+        condition: service_started
+    ports:
+      - "8000:8000"
+    networks:
+      - app-network
+    environment:
+      MONGO_URI: "mongodb://mongos:27017"
+      MONGO_DB_NAME: "gestionBourse"
+      PYTHON_API_URL: "http://python-api:5000"
+      ENABLE_REDIS_CACHE: "true"
+    restart: on-failure
+    # profiles:
+    #   - manual
+    command: >
+      bash -c '
+      if [ "$ENABLE_REDIS_CACHE" = "true" ]; then
+        echo "INFO: Redis cache ENABLED via environment variable."
+        exec java -jar ./app.jar --enableRedisCache
+      else
+        echo "INFO: Redis cache DISABLED via environment variable."
+        exec java -jar ./app.jar
+      fi
+      '

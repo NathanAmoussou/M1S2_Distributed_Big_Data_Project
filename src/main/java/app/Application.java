@@ -56,8 +56,6 @@ public class Application {
         System.out.println("Connecting to MongoDB at: " + mongoConnectionString);
         System.out.println("Using Database: " + dbName);
 
-
-
         try {
             // Connect to MongoDB
             mongoClient = MongoClients.create(mongoConnectionString);
@@ -65,15 +63,8 @@ public class Application {
             database.runCommand(new org.bson.Document("ping", 1));
             System.out.println("Successfully connected to MongoDB.");
 
-            // RESET THE DATABASE
-            Boolean resetDatabase = true; // Set to true to reset the database
-            if (resetDatabase) {
-                System.out.println("Resetting the database. All data will be lost.");
-                database.drop(); // Drop the database to reset it
-                System.out.println("Database reset complete.");
-            } else {
-                System.out.println("Skipping database reset. Existing data will be preserved.");
-            }
+            boolean runSeeding = false;
+            boolean runSimulation = false;
             
             // RUN DATABASE SETUP (indexing and validators setup)
             try {
@@ -88,7 +79,6 @@ public class Application {
             }
 
             // RUN DATABASE SEEDING
-            boolean runSeeding = true;
             if (runSeeding) {
                 try {
                     System.out.println("\n--- Starting Database Seeding ---");
@@ -113,7 +103,7 @@ public class Application {
             // *** === (Optional) Run Tests === ***
             // System.out.println("\n---------- Testing Operations ----------");
             // testStockCrud(stockService); // Pass initialized service
-            // testHistoricalDataFetch(stockService, historyDao); // Pass initialized components
+            // testHistoricalDataFetch(database);
 
             // START REST API SERVER (IN A BACKGROUND THREAD)
             System.out.println("\nStarting REST API Server...");
@@ -134,7 +124,6 @@ public class Application {
             }
 
             // RUN INTERACTION SIMULATION (USING THE RESTAPI - IN A BACKGROUND THREAD)
-            boolean runSimulation = true;
             if (runSimulation) {
                 System.out.println("\n--- Starting Interaction Simulation (Background) ---");
                 MongoDatabase finalDatabase = database;
@@ -267,10 +256,10 @@ public class Application {
     /**
      * Test fetching and storing historical data for a specific stock
      */
-    private static void testHistoricalDataFetch(String mongoConnectionString, String dbName) {
+    private static void testHistoricalDataFetch(MongoDatabase db) {
         crudStockService stockService = null;
         try {
-            MongoDatabase database = MongoClients.create(mongoConnectionString).getDatabase(dbName);
+            MongoDatabase database = db;
             // Initialize the CRUD service
             stockService = new crudStockService(database);
 

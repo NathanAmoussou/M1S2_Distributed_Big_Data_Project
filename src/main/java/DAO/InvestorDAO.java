@@ -1,20 +1,22 @@
 package DAO;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.bson.Document;
+import org.bson.types.ObjectId;
+import org.json.JSONObject;
+
 import com.mongodb.client.ClientSession;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.IndexOptions;
 import com.mongodb.client.model.Indexes;
-import Models.Wallet;
-import org.bson.Document;
-import Models.Investor;
-import org.bson.types.ObjectId;
-import org.json.JSONObject;
 
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
+import Models.Investor;
+import Models.Wallet;
 
 public class InvestorDAO implements GenericDAO<Investor> {
 
@@ -23,7 +25,7 @@ public class InvestorDAO implements GenericDAO<Investor> {
 
     public InvestorDAO(MongoDatabase database) {
         this.collection = database.getCollection("investors");
-        this.createUniqueIndexes(); // index sur username and email to avoid duplicates investors
+        // this.createUniqueIndexes(); // index sur username and email to avoid duplicates investors
     }
 
     private void createUniqueIndexes() {

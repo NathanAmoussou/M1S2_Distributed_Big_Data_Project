@@ -11,7 +11,6 @@ import org.bson.types.Decimal128; // Import Decimal128
 import com.mongodb.client.ClientSession; // Import ClientSession
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
-import com.mongodb.client.model.IndexOptions;
 
 import Models.Stock;
 
@@ -20,7 +19,7 @@ public class StockDAO implements GenericDAO<Stock> {
 
     public StockDAO(MongoDatabase database) {
         this.collection = database.getCollection("stocks");
-        this.collection.createIndex(new Document("stockTicker", 1), new IndexOptions().unique(true));
+        // this.collection.createIndex(new Document("stockTicker", 1), new IndexOptions().unique(true));
     }
 
     // findByStockTicker method to find a stock by its ticker symbol without session
