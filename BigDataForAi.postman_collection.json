@@ -1,10 +1,9 @@
 {
 	"info": {
-		"_postman_id": "042519ec-2f49-44da-86b9-1c7cbbd6f0f5",
+		"_postman_id": "44a0ffe1-94c8-49db-8251-2e853a0fbcc2",
 		"name": "BigDataForAi",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "34510865",
-		"_collection_link": "https://tristan-7260.postman.co/workspace/assignments~6bbb9ee7-b637-4124-8ae3-faf61e8d89ac/collection/34510865-042519ec-2f49-44da-86b9-1c7cbbd6f0f5?action=share&source=collection_link&creator=34510865"
+		"_exporter_id": "39090126"
 	},
 	"item": [
 		{
@@ -406,7 +405,32 @@
 									]
 								}
 							},
-							"response": []
+							"response": [
+								{
+									"name": "/stocks/{{ticker}}/history",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "http://localhost:8000/stocks/AIR.PA/history",
+											"protocol": "http",
+											"host": [
+												"localhost"
+											],
+											"port": "8000",
+											"path": [
+												"stocks",
+												"AIR.PA",
+												"history"
+											]
+										}
+									},
+									"_postman_previewlanguage": null,
+									"header": null,
+									"cookie": [],
+									"body": null
+								}
+							]
 						},
 						{
 							"name": "/stocks/{{ticker}}/history?startDate={{2023-01-01}}&endDate={{2023-01-31}}",
@@ -517,6 +541,56 @@
 								}
 							},
 							"response": []
+						},
+						{
+							"name": "/stocks/{{ticker}}/history?startDate={{}}&endDate={{}}&page={{}}&pageSize={{}} Copy",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:8000/stocks/AMZN/history?startDate=2022-01-01&endDate=2022-12-31&page=1&pageSize=10",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8000",
+									"path": [
+										"stocks",
+										"AMZN",
+										"history"
+									],
+									"query": [
+										{
+											"key": "startDate",
+											"value": "2022-01-01"
+										},
+										{
+											"key": "endDate",
+											"value": "2022-12-31"
+										},
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "pageSize",
+											"value": "10"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "historique des 30 jours",
+							"request": {
+								"method": "GET",
+								"header": []
+							},
+							"response": []
 						}
 					]
 				},
@@ -525,6 +599,40 @@
 					"item": [
 						{
 							"name": "/stocks/MSFT/evolution?startDate={{}}&endDate={{}}",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:8000/stocks/MSFT/evolution?startDate=2023-01-03&endDate=2025-05-01",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8000",
+									"path": [
+										"stocks",
+										"MSFT",
+										"evolution"
+									],
+									"query": [
+										{
+											"key": "startDate",
+											"value": "2023-01-03"
+										},
+										{
+											"key": "endDate",
+											"value": "2025-05-01"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "/stocks/MSFT/evolution?startDate={{}}&endDate={{}} Copy",
 							"request": {
 								"auth": {
 									"type": "noauth"
@@ -671,7 +779,38 @@
 									]
 								}
 							},
-							"response": []
+							"response": [
+								{
+									"name": "(asset PNL) /wallets/{{walletId}}/profitLoss?stockTicker={{sockTicker}}",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "http://localhost:8000/wallets/68138f433e05cd45ec44e707/profitLoss?stockTicker=MSFT",
+											"protocol": "http",
+											"host": [
+												"localhost"
+											],
+											"port": "8000",
+											"path": [
+												"wallets",
+												"68138f433e05cd45ec44e707",
+												"profitLoss"
+											],
+											"query": [
+												{
+													"key": "stockTicker",
+													"value": "MSFT"
+												}
+											]
+										}
+									},
+									"_postman_previewlanguage": null,
+									"header": null,
+									"cookie": [],
+									"body": null
+								}
+							]
 						},
 						{
 							"name": "(global PNL) /wallets/{{walletId}}/profitLoss",
@@ -955,6 +1094,61 @@
 							"response": []
 						}
 					]
+				}
+			]
+		},
+		{
+			"name": "admin",
+			"item": [
+				{
+					"name": "get cache staus",
+					"request": {
+						"method": "GET",
+						"header": []
+					},
+					"response": []
+				},
+				{
+					"name": "activer le cache",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8000/admin/cache/enable",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"admin",
+								"cache",
+								"enable"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "desactiver le cache",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8000/admin/cache/enable",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"admin",
+								"cache",
+								"enable"
+							]
+						}
+					},
+					"response": []
 				}
 			]
 		}
