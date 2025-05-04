@@ -1,9 +1,10 @@
 {
 	"info": {
-		"_postman_id": "44a0ffe1-94c8-49db-8251-2e853a0fbcc2",
+		"_postman_id": "ad6ec0f4-0c7e-4106-a8da-9f78f9131fa5",
 		"name": "BigDataForAi",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "39090126"
+		"_exporter_id": "34510865",
+		"_collection_link": "https://tristan-7260.postman.co/workspace/assignments~6bbb9ee7-b637-4124-8ae3-faf61e8d89ac/collection/34510865-ad6ec0f4-0c7e-4106-a8da-9f78f9131fa5?action=share&source=collection_link&creator=34510865"
 	},
 	"item": [
 		{
@@ -425,10 +426,10 @@
 											]
 										}
 									},
-									"_postman_previewlanguage": null,
-									"header": null,
+									"_postman_previewlanguage": "Text",
+									"header": [],
 									"cookie": [],
-									"body": null
+									"body": ""
 								}
 							]
 						},
@@ -588,7 +589,10 @@
 							"name": "historique des 30 jours",
 							"request": {
 								"method": "GET",
-								"header": []
+								"header": [],
+								"url": {
+									"raw": ""
+								}
 							},
 							"response": []
 						}
@@ -805,10 +809,10 @@
 											]
 										}
 									},
-									"_postman_previewlanguage": null,
-									"header": null,
+									"_postman_previewlanguage": "Text",
+									"header": [],
 									"cookie": [],
-									"body": null
+									"body": ""
 								}
 							]
 						},
@@ -1104,7 +1108,10 @@
 					"name": "get cache staus",
 					"request": {
 						"method": "GET",
-						"header": []
+						"header": [],
+						"url": {
+							"raw": ""
+						}
 					},
 					"response": []
 				},
